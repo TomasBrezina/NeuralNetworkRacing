@@ -1,0 +1,9 @@
+{
+"WIDTH": 1280,
+"HEIGHT": 720, 
+"friction": 0.9,
+"render_timestep": 0.05,
+"timeout_seconds": 90,
+"population": 80,
+"mutation_rate": 0.25
+}
