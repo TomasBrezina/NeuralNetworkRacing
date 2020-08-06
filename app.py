@@ -95,9 +95,10 @@ class SimulationApp:
         track = Track(trackdir, load_track(trackdir+"/track.csv"), load_settings(trackdir+"/track_settings.json"))
 
         ### INIT WINDOW ###
-        self.window = pyglet.window.Window(fullscreen=False, resizable=False)
+        self.window = pyglet.window.Window(fullscreen=True, resizable=True)
         self.window.set_caption("NEURAL NETWORK RACING by Tomas Brezina")
-        self.window.set_size(track.stg["WIDTH"], track.stg["HEIGHT"])
+        if not self.window.fullscreen:
+            self.window.set_size(track.stg["WIDTH"], track.stg["HEIGHT"])
 
         ### LOAD ICON ###
         try:
@@ -115,7 +116,7 @@ class SimulationApp:
 
         ### VARIABLES ###
         self.show = False  # show track, cps, etc.
-        self.pause = True  # pause the simulation
+        self.pause = False  # pause the simulation
         self.timer = 0  # number of ticks
         self.timer_limit = self.game_stg["timeout_seconds"] // self.game_stg["render_timestep"]  # max ticks
 
@@ -132,9 +133,6 @@ class SimulationApp:
     def on_key_release(self,symbol, modifiers):
         # save the nn
         if symbol == key.S:
-            self.pause = True
-            self.window.minimize()
-            self.window.set_fullscreen(False)
             if self.savename and self.simulation.best_nn:
                 _save_stg = self.save_stg
                 _save_stg["generations"] = self.simulation.gen_count
