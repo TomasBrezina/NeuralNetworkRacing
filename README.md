@@ -1,18 +1,19 @@
 # NeuralNetworkRacing
 Simple 2D simulation using **pyglet** in which ANN learns to drive a car on a track.
 
-You can download it and create and train a new ANN, you can also simply change simulation or car settings in their ***settings.json*** file.
+You can download it and create and train a new ANN.
 
 I would be glad for any advice or contribution!
 
 [![AI learns to Race](https://yt-embed.herokuapp.com/embed?v=B0ptl-NChJQ)](https://youtu.be/B0ptl-NChJQ "AI learns to Race")
 
 ## Neural network and Evolution
-Each artificial neural network has number of inputs and outputs. In this case there are several distance sensors and a car velocity which go (as a numbers) into the neural network. And it outputs steering and acceleration.
+Each artificial neural network has number of inputs and outputs. 
+The inputs are distance sensors and car speed, these number enter the neural network and it outputs steering and acceleration.
 ![Neural network](http://www.brez.cz/projects/nn-racing/nnracing_example2.png)
 
-The best cars are selected from each generation
-and forms another slightly mutated generation.  Over time, cars improve.
+The most successful cars in a generation are parents of next (slightly mutated) generation.
+Over time, the results improve.
 
 ## Enviroment
 The track consists of several line segments. Between them there are checkpoints.
