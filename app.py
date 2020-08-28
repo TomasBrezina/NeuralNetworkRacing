@@ -18,6 +18,7 @@ def load_json(directory):
             stg = json.load(json_file)
         return stg
     except:
+        print("Failed to load: %s" % directory)
         return False
 
 # save .json file
@@ -165,7 +166,6 @@ class App:
         self.graphics.update_sprites(self.simulation.cars)
         self.graphics.labels["max"].text = "Best score: " + str(self.simulation.max_score)
 
-
     # every frame
     def update(self,dt):
         if not self.pause:
@@ -224,6 +224,12 @@ class App:
 
         pyglet.clock.schedule_interval(self.update, self.settings["render_timestep"])
         pyglet.app.run()
+
+    def end_simulation(self):
+        pyglet.clock.unschedule(self.update)
+        statistics = self.simulation.statistics
+        self.simulation = False
+        return statistics
 
     # end
     def exit(self):

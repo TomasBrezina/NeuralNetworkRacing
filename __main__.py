@@ -13,10 +13,10 @@ I used a simple Evolutionary algorithm to train the NN.
 - Tomáš Březina 2020
 
 Requirements:
-pyglet
-numpy
-os
-json
+pyglet (graphics)
+numpy (neural network, math, ..)
+os (not necessary - only in save_neural_network function)
+json (loading and saving settings and saves)
 """
 
 from app import App, load_json, load_track
@@ -30,8 +30,8 @@ settings = {
     "friction": 0.8,
     "render_timestep": 0.03,
     "timeout_seconds": 60,
-    "population": 100,
-    "mutation_rate": 0.25
+    "population": 40,
+    "mutation_rate": 0.15
 }
 
 # load track
@@ -41,8 +41,8 @@ except: trackbg = False
 track = Track(load_track(trackdir + "/track.csv"), load_json(trackdir + "/track_settings.json"), trackbg)
 
 NAME = "test" # name of the current NN
-NEW_NEURAL_NETWORK = True
-SAVEFILE = "saves/test.json"
+NEW_NEURAL_NETWORK = False
+SAVEFILE = "saves/test5322.json"
 
 if NEW_NEURAL_NETWORK:
     # create new neural network
@@ -50,7 +50,7 @@ if NEW_NEURAL_NETWORK:
         "ACCELERATION": 3,
         "MAX_SPEED": 20,
         "ROTATION_SPEED": 3.5,
-        "SHAPE": [5, 4, 2],
+        "SHAPE": [5, 4, 3, 2],
         "best_result": 0,
         "generations": 0
     }
@@ -64,6 +64,7 @@ else:
 
 # window
 app = App(settings)
+
 app.start_simulation(
     track=track,
     nn_stg=nn_stg,
