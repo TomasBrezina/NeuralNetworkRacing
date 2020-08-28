@@ -3,16 +3,16 @@
 from pyglet.gl import *
 from pyglet.window import key
 
-from numpy import savetxt, loadtxt, empty
-from os import mkdir, listdir
+from numpy import loadtxt, empty
+from os import listdir
 import json
 
 from graphics import Graphics
-from core import Simulation, Track
+from core import Simulation
 from neural_network import NeuralNetwork
 
 # load .json file
-def load_settings(directory):
+def load_json(directory):
     try:
         with open(directory) as json_file:
             stg = json.load(json_file)
@@ -21,47 +21,27 @@ def load_settings(directory):
         return False
 
 # save .json file
-def save_settings(directory,data):
+def save_json(directory,data):
     with open(directory, "w") as json_file:
         json.dump(data, json_file)
 
-# save nn as a folder
-def save_neural_network(nn, save_stg, name, folder="saves"):
-    valid_name = False
-    count = 0
-    new_name = name
-    while not valid_name:
-        save_dir = folder + "/" + new_name
-        try:
-            mkdir(save_dir)
-            valid_name = True
-            print("Save folder", new_name, " created ")
-        except FileExistsError:
-            count += 1
-            new_name = name + "(" + str(count) + ")"
-    for ind in range(len(nn.weights)):
-        savetxt(save_dir+"/"+str(ind+1)+".csv", nn.weights[ind], delimiter=",")
-    with open(save_dir+"/save_settings.json", "w") as json_file:
-        json.dump(save_stg, json_file)
+# save nn as a .json file
+def save_neural_network(name, weigts, settings, folder="saves"):
+    # get name
+    savefiles = listdir(folder)
+    savename = name
+    name_count = 0
+    while savename + ".json" in savefiles:
+        name_count += 1
+        savename = "%s(%s)" % (name,name_count)
 
-# load nn from a folder
-def load_neural_network(directory):
-    listd = listdir(directory)
-    listd = sorted(listd)
-
-    shape = []
-    weights = []
-    for ind in range(len(listd)):
-        filename = listd[ind]
-        if filename.endswith(".csv"):
-            layer = loadtxt(directory + "/" + filename, delimiter=",")
-            weights.append(layer)
-            shape.append(len(layer))
-    shape.append(2) # because of 2 outputs
-
-    nn = NeuralNetwork(shape)
-    nn.set_weights(weights)
-    return nn
+    savefile = {
+        "settings" : settings,
+        "weights" : [np_arr.tolist() for np_arr in weigts]
+    }
+    with open(folder+"/"+savename+".json", "w") as json_file:
+        json.dump(savefile, json_file)
+    print("Saved ", savename)
 
 # load track from a folder
 def load_track(directory):
@@ -76,29 +56,19 @@ def load_track(directory):
 Window management.
 """
 
-class SimulationApp:
-    def __init__(self, trackdir, savename="New NN", savedir=None):
+class App:
+    def __init__(self, settings):
         ### NAME OF SAVE ###
-        self.savename = savename
+        self.savename = "NN"
+        self.simulation = False
 
-        ### LOAD ###
-        self.game_stg = False
-        self.save_stg = False
-        self.nn = False
-        self.game_stg = load_settings("settings.json")
-        if savedir:
-            self.save_stg = load_settings(savedir+"/save_settings.json")
-            self.nn = load_neural_network(savedir)
-        else:
-            self.save_stg = load_settings("saves/default_save_settings.json")
-            self.nn = False
-        track = Track(trackdir, load_track(trackdir+"/track.csv"), load_settings(trackdir+"/track_settings.json"))
+        self.settings = settings
 
         ### INIT WINDOW ###
         self.window = pyglet.window.Window(fullscreen=True, resizable=True)
         self.window.set_caption("NEURAL NETWORK RACING by Tomas Brezina")
-        if not self.window.fullscreen:
-            self.window.set_size(track.stg["WIDTH"], track.stg["HEIGHT"])
+
+        if not self.window.fullscreen: self.window.set_size(settings["WIDTH"], settings["HEIGHT"])
 
         ### LOAD ICON ###
         try:
@@ -108,8 +78,8 @@ class SimulationApp:
             print("Error >>> Loading icon")
 
         ### MODULES ###
-        self.simulation = Simulation(track, self.game_stg, self.save_stg)
-        self.graphics = Graphics(self.window, track)
+        self.simulation = None
+        self.graphics = Graphics(self.window)
 
         ### LABELS ###
         self.graphics.labels["name"].text = self.savename
@@ -118,10 +88,7 @@ class SimulationApp:
         self.show = False  # show track, cps, etc.
         self.pause = False  # pause the simulation
         self.timer = 0  # number of ticks
-        self.timer_limit = self.game_stg["timeout_seconds"] // self.game_stg["render_timestep"]  # max ticks
-
-        ### RESIZE ###
-        self.graphics.change_scale(self.window.width / self.game_stg["WIDTH"])
+        self.timer_limit = self.settings["timeout_seconds"] // self.settings["render_timestep"]  # max ticks
 
         ### BIND EVENTS ###
         self.window.event(self.on_key_release)
@@ -134,13 +101,20 @@ class SimulationApp:
         # save the nn
         if symbol == key.S:
             if self.savename and self.simulation.best_nn:
-                _save_stg = self.save_stg
+                _save_stg = self.simulation.save_stg
                 _save_stg["generations"] = self.simulation.gen_count
                 _save_stg["best_result"] = self.simulation.max_score
-                save_neural_network(self.simulation.best_nn, _save_stg, self.savename)
+                save_neural_network(
+                    name=self.savename,
+                    weigts=self.simulation.best_nn.weights,
+                    settings=self.simulation.save_stg,
+                    folder="saves"
+                )
         # fullscreen on/off
         if symbol == key.F:
             self.window.set_fullscreen(not self.window.fullscreen)
+            if not self.window.fullscreen: self.window.set_size(self.settings["WIDTH"], self.settings["HEIGHT"])
+
         # pause on/off
         if symbol == key.P:
             self.pause = not self.pause
@@ -154,40 +128,57 @@ class SimulationApp:
 
     # when resized
     def on_resize(self, width, height):
-        self.graphics.change_scale(width / self.game_stg["WIDTH"])
+        _scale = width / self.settings["WIDTH"]
+        self.graphics.change_scale(_scale)
+        self.simulation.track.change_scale(_scale)
 
     # every frame
     def on_draw(self):
-        # update sprites position and angle
-        self.graphics.update_sprites(self.simulation.cars)
-        # draw it
-        self.graphics.on_draw()
-        # draw track details
+        self.graphics.clear()
+        if self.simulation.track.bg: self.graphics.draw_bg(self.simulation.track.bg)
+
+        self.graphics.car_batch.draw()
+        self.graphics.draw_labels()
+        # draw hidden details
         if self.show:
-            self.graphics.on_draw_show(self.simulation.track.cps_dict)
+            for car in self.simulation.cars:
+                self.graphics.draw_car_sensors(car)
+            # draw checkpoints
+            self.graphics.draw_cps(self.simulation.track.cps_dict)
+            # draw edge of the track
+            self.graphics.draw_lines(self.simulation.track.vertex_list)
+        else:
+            if not self.simulation.track.bg:
+                self.graphics.draw_lines(self.simulation.track.vertex_list)
 
-    # behaviour 
-    def behave(self,dt):
-        active = self.simulation.behave(dt)
-        if not active:
-            self.timer = 0
-            self.new_generation()
-        self.timelimit()
-
-    # create new generation based on the best NNs
+    # create new generation from best nns
     def new_generation(self):
         self.graphics.labels["gen"].text = "Generation: " + str(int(self.simulation.gen_count))
         self.graphics.clear_batch()
-        self.simulation.new_generation(self.simulation.get_best_nns(), self.graphics.car_images, self.graphics.car_batch)
+        self.simulation.new_generation(
+            best_nns=self.simulation.get_best_nns(),
+            population=self.settings["population"],
+            mutation_rate=self.settings["mutation_rate"],
+            images=self.graphics.car_images,
+            batch=self.graphics.car_batch
+        )
+        self.graphics.update_sprites(self.simulation.cars)
         self.graphics.labels["max"].text = "Best score: " + str(self.simulation.max_score)
 
 
-    # tick
+    # every frame
     def update(self,dt):
         if not self.pause:
             # car behaviour
-            self.behave(dt)
+            active = self.simulation.behave(dt)
+            if not active:
+                self.timer = 0
+                self.new_generation()
             self.simulation.update(dt)
+            # update sprites position and rotation
+            self.graphics.update_sprites(self.simulation.cars)
+            self.timelimit()
+
 
     # each tick
     def timelimit(self):
@@ -195,19 +186,43 @@ class SimulationApp:
         if self.timer >= self.timer_limit:
             self.timer = 0
             self.new_generation()
-        seconds = int(self.timer * self.game_stg["render_timestep"])
-        self.graphics.labels["time"].text = "Time: " + str(seconds) + " / " + str(self.game_stg["timeout_seconds"])
+        seconds = int(self.timer * self.settings["render_timestep"])
+        self.graphics.labels["time"].text = "Time: " + str(seconds) + " / " + str(self.settings["timeout_seconds"])
 
     # start of simulation
-    def run(self):
+    def start_simulation(self, track, nn_stg, nn_weights=False, name="New NN"):
+        # init simulation
+        self.savename = name
+        self.simulation = Simulation(track, nn_stg)
+        self.simulation.friction = self.settings["friction"]
+        # set labels
+        self.graphics.labels["name"].text = self.savename[:10]
         self.graphics.labels["gen"].text = "Generation: " + str(int(self.simulation.gen_count))
         self.graphics.labels["max"].text = "Best score: " + str(self.simulation.max_score)
         # new save or loaded one
-        if self.nn == False:
-            self.simulation.first_generation(self.graphics.car_images, self.graphics.car_batch, shape=self.save_stg["SHAPE"])
+        if nn_weights == False:
+            self.simulation.first_generation(
+                shape=self.simulation.save_stg["SHAPE"],
+                population=self.settings["population"],
+                mutation_rate=self.settings["mutation_rate"],
+                images=self.graphics.car_images,
+                batch=self.graphics.car_batch
+            )
         else:
-            self.simulation.load_generation(self.nn,self.graphics.car_images,self.graphics.car_batch)
-        pyglet.clock.schedule_interval(self.update, self.game_stg["render_timestep"])
+            nn = NeuralNetwork(self.simulation.save_stg["SHAPE"])
+            nn.set_weights(nn_weights)
+            self.simulation.load_generation(
+                nn=nn,
+                population=self.settings["population"],
+                mutation_rate=self.settings["mutation_rate"],
+                images=self.graphics.car_images,
+                batch=self.graphics.car_batch
+            )
+        self.graphics.update_sprites(self.simulation.cars)
+
+        self.on_resize(self.window.width, self.window.height)
+
+        pyglet.clock.schedule_interval(self.update, self.settings["render_timestep"])
         pyglet.app.run()
 
     # end

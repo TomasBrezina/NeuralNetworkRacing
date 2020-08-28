@@ -6,6 +6,7 @@ import numpy as np
 from numpy import cos,sin,radians,sqrt,ones
 from neural_network import NeuralNetwork
 
+
 # finds intersection between two LINE SEGMENTS
 def find_intersection( p0, p1, p2, p3 ) :
     s10_x = p1[0] - p0[0]
@@ -43,9 +44,9 @@ def index_loop(ind, len):
 Core of simulation.
 """
 class Simulation:
-    def __init__(self, track, game_stg, save_stg):
-        self.game_stg = game_stg
+    def __init__(self, track, save_stg):
         self.save_stg = save_stg
+        self.friction = 0.9
 
         self.cars = set()
         self.track = track
@@ -56,27 +57,27 @@ class Simulation:
         self.best_nn = None # best nn to save
 
     # first generation with random weights
-    def first_generation(self, images, batch, shape=[5,3,3,2]):
+    def first_generation(self, shape, population, mutation_rate, images, batch):
         nn = NeuralNetwork(shape)
         nn.set_random_weights()
-        self.new_generation([nn], images, batch)
+        self.new_generation([nn], population, mutation_rate, images, batch)
 
     # generation with loaded NN
-    def load_generation(self, nn, images, batch):
-        self.new_generation([nn], images, batch)
+    def load_generation(self, nn, population, mutation_rate, images, batch):
+        self.new_generation([nn], population, mutation_rate, images, batch)
 
     # new generation based on (best) neural networks
-    def new_generation(self, best_nns, images, batch):
+    def new_generation(self, best_nns, population, mutation_rate, images, batch):
         self.gen_count += 1
         self.cars = set()
-        for i in range(self.game_stg["population"]):
+        for i in range(population):
             # name, loaded image
             name,image = images[index_loop(i, len(images))]
             sprite = pyglet.sprite.Sprite(image, batch=batch)
             # starting point is on cp (this is important, dont change it)
             pos = (*self.track.cps_dict[self.track.stg["spawnindex"]], self.track.stg["spawna"])
             # get mutated version of one of best NNs
-            best_nn = best_nns[index_loop(i, len(best_nns))].reproduce(self.get_mutation_rate())
+            best_nn = best_nns[index_loop(i, len(best_nns))].reproduce(mutation_rate)
             self.cars.add(Car(best_nn, pos, self.save_stg, sprite))
         return self.cars
 
@@ -98,10 +99,6 @@ class Simulation:
             self.best_nn = best_nns[0]
         return best_nns
 
-    # useless function
-    def get_mutation_rate(self):
-        return self.game_stg["mutation_rate"]
-
     # get car inputs (sensors and velocity)
     # because of track subdivision
     # only track segments near current cp are tested if sensors intersect with it
@@ -114,8 +111,10 @@ class Simulation:
 
         # sensors index loop
         for sen_ind in range(car.sensors.shape[0]):
-            sensor = car.sensors[sen_ind]  # current sensor
-            sen_pos = [(car.xpos, car.ypos), car.translate_point(sensor)]  # sensor coordinates
+            new_pos = car.translate_point(car.sensors_shape[sen_ind])
+            # update position of sensor
+            car.sensors[sen_ind] = new_pos
+            sen_pos = [(car.xpos, car.ypos), new_pos]  # sensor coordinates
             min_dist = 1  # smallest dist
 
             # goes through nearby cps
@@ -172,8 +171,9 @@ class Simulation:
                 # get nn output
                 out = car.nn.forward(inp)
                 # move the car!
-                car.move(self.game_stg["friction"], out[1])
-                car.turn((out[0]-.5)*2)
+                print(out[1])
+                car.move(self.friction, out[1])  # number between 0 and 1
+                car.turn((out[0]-.5)*2)  # number between -1 and 1
         # if no car is active :(
         if inactive: return False
         else: return True
@@ -186,7 +186,7 @@ class Simulation:
 """
 Track object.
 
-The way it works is the best I have come up with so far. 
+The way this works is the best I have come up with so far. 
 I tried grid subdivision or some lines algorithms, but this is simple, and I will be able to generate tracks randomly.
 
 Track consists of several 2-point "gates" in a loop. These points connect to form the edge of a track.
@@ -197,9 +197,14 @@ When car is at the CP it checks for intersection only with nearby lines belongin
 And dont have to find intersection on every line.
 """
 class Track:
-    def __init__(self, trackdir, nodes, stg):
-        self.trackdir = trackdir
+    def __init__(self, nodes, stg, bg=False):
         self.nodes = nodes
+        self.vertex_list = (
+            pyglet.graphics.vertex_list(len(self.nodes[0]), ('v2i', (self.nodes[0].flatten()).astype(int))),
+            pyglet.graphics.vertex_list(len(self.nodes[1]), ('v2i', (self.nodes[1].flatten()).astype(int)))
+        )
+        self.bg = bg
+
         self.lines_dict = {}
         self.cps_dict = {}
         lenght = nodes.shape[1]
@@ -208,20 +213,26 @@ class Track:
                 [nodes[0,i],nodes[0,index_loop(i+1, lenght)]],
                 [nodes[1,i],nodes[1,index_loop(i+1, lenght)]]
             ])
-            # CP is midpoint between "gate"
+            # CP is midpoint between 2-point "gate"
             gate = nodes[:,i]
             cp = [(gate[0,0] + gate[1,0]) // 2, (gate[0,1] + gate[1,1]) // 2]
             self.cps_dict[i] = cp
         self.stg = stg
 
+    def change_scale(self, scale):
+        for i in range(len(self.vertex_list)):
+            self.vertex_list[i].vertices = (self.nodes[i].flatten() * scale).astype(int)
+        if self.bg: self.bg.scale = scale
+
 """
 Car object. 
+Each one has its own neural network and sprite.
 """
 class Car:
     def __init__(self, nn, pos, save_stg, sprite):
         self.nn = nn
-
         self.save_stg = save_stg
+
         self.xpos = pos[0]
         self.ypos = pos[1]
         self.angle = pos[2]
@@ -238,13 +249,13 @@ class Car:
         #    \    /
         #     \  /
         # -----[]-----
-        self.sensors = np.array([
+        self.sensors_shape = np.array([
             [25, -120],
             [170, -70],
             [170, 70],
             [25, 120],
         ])
-
+        self.sensors = np.copy(self.sensors_shape)
         # sensors lengths
         self.sensors_lengths = np.zeros((self.sensors.shape[0],))
         for i in range(self.sensors.shape[0]):
@@ -253,9 +264,17 @@ class Car:
     # returns translated point (coordinates from perspective of car -> coordinates on screen)
     def translate_point(self, p):
         x, y = p
-        new_x = x * np.cos(radians(self.angle)) + y * np.sin(radians(self.angle)) + self.xpos
-        new_y = -(-x * np.sin(radians(self.angle)) + y * np.cos(radians(self.angle))) + self.ypos
+        cos = np.cos(radians(self.angle))
+        sin = np.sin(radians(self.angle))
+        new_x = x * cos + y * sin + self.xpos
+        new_y = -(-x * sin + y * cos) + self.ypos
         return (new_x,new_y)
+
+    def update_sensors(self):
+        for sen_ind in range(self.sensors.shape[0]):
+            def_pos = self.sensors_shape[sen_ind]  # current sensor
+            new_pos = self.translate_point(def_pos)  # sensor coordinates
+            self.sensors[sen_ind] = new_pos
 
     # tick
     def update(self):
@@ -269,6 +288,7 @@ class Car:
         if self.speed > self.save_stg["MAX_SPEED"]:
             self.speed = self.save_stg["MAX_SPEED"]
         self.speed *= friction
+
 
     # tick
     def turn(self, direction=1):

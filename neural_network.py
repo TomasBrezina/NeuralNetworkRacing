@@ -7,14 +7,14 @@ def sigmoid(x):
   return 1 / (1 + np.exp(-x))
 
 """
-Neural network with multiple layers
+Neural network with multiple layers.
 """
 class NeuralNetwork():
     def __init__(self, shape):
         ### SHAPE ###
-        self.size = len(shape) # počet vrstev
-        self.shape = shape # tvar sítě
-        self.weights = [] # váhy
+        self.size = len(shape) # number of layers
+        self.shape = shape # shape of nn
+        self.weights = [] # weights
 
         ### ZEROS ###
         for i in range(1,self.size):

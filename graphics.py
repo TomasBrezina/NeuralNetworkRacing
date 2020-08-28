@@ -9,7 +9,6 @@ GREEN = (0, 153, 51, 255)
 RED = (204, 0, 0, 255)
 GRAY = (128, 128, 128, 255)
 
-
 # car images
 racers_info = {
     "Black" : ["Black.png", (0,0,0,255)],
@@ -28,7 +27,7 @@ racers_info = {
 Rendering.
 """
 class Graphics:
-    def __init__(self, window, track):
+    def __init__(self, window):
         # INIT
         pyglet.gl.glEnable(pyglet.gl.GL_BLEND)
         pyglet.gl.glBlendFunc(pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
@@ -36,14 +35,6 @@ class Graphics:
         self.window = window
         self.scale = 1
 
-        # TRACK
-        self.track_nodes = track.nodes
-        self.track_vertex_lists = (
-            pyglet.graphics.vertex_list(len(self.track_nodes[0]),('v2i', (self.track_nodes[0].flatten()).astype(int))),
-            pyglet.graphics.vertex_list(len(self.track_nodes[1]),('v2i', (self.track_nodes[1].flatten()).astype(int)))
-        )
-        try: self.track_bg = pyglet.image.load(track.trackdir+"/bg.png")
-        except: self.track_bg = False
         self.car_batch = pyglet.graphics.Batch()
         self.car_images = []
         for name in racers_info:
@@ -83,22 +74,31 @@ class Graphics:
         # SCALE
         self.change_scale(self.scale)
 
-    # on draw
-    def on_draw(self):
-        glClearColor(0.69, 0.76 , 0.87, 1)
+    def set_track(self, vertex_list, bg=False):
+        self.track_vertex_list = vertex_list
+        self.track_bg = bg
+
+    def clear(self):
+        glClearColor(0.69, 0.76, 0.87, 1)
         glClear(GL_COLOR_BUFFER_BIT)
         glColor3f(1, 1, 1)
-        if self.track_bg: self.track_bg.blit(0,0, width=self.window.width, height=self.track_bg.height/(self.track_bg.width/self.window.width))
-        self.car_batch.draw()
-        self.draw_self_labels()
+
+    def draw_bg(self, bg):
+        bg.blit(0,0, width=self.window.width, height=bg.height/(bg.width/self.window.width))
+
+    def draw_lines(self, vertex_list):
+        for vl in vertex_list:
+            vl.draw(pyglet.gl.GL_LINE_LOOP)
 
     # draw track details
-    def on_draw_show(self, cps):
-        for vl in self.track_vertex_lists:
-            vl.draw(pyglet.gl.GL_LINE_LOOP)
+    def draw_cps(self, cps):
         for key in cps:
             cp = cps[key]
             self.draw_point(cp)
+
+    def draw_car_sensors(self,car):
+        for sen in car.sensors:
+            self.draw_line([(car.xpos,car.ypos), sen],(1,1,1,0.3))
 
     # update cars sprites before rendering
     def update_sprites(self,cars):
@@ -112,17 +112,16 @@ class Graphics:
         image.anchor_y = image.height // 2
         return image
 
-
     # draw every label
-    def draw_self_labels(self):
+    def draw_labels(self):
         for key in self.labels:
             self.labels[key].draw()
 
 
     # draw a line
-    def draw_line(self,line,color=(1,1,1)):
+    def draw_line(self,line,color=(1,1,1,1)):
         sc = self.scale
-        glColor3f(*color)
+        glColor4f(*color)
         glBegin(GL_LINES)
         glVertex2f(line[0][0]*sc, line[0][1]*sc)
         glVertex2f(line[1][0]*sc, line[1][1]*sc)
@@ -146,16 +145,9 @@ class Graphics:
     def change_scale(self,scale):
         self.lb_stg["size"] = (20 * scale, self.window.height - (20 * scale), 325 * scale, self.window.height - (200 * scale))
         pos = self.lb_stg["pos"]
-
         for key in self.labels:
             label = self.labels[key]
             label.x = pos[key][0] * scale
             label.y = self.window.height - ((720 - pos[key][1])*scale)
-
             label.font_size = (label.font_size / self.scale) * scale
-
-        for i in range(len(self.track_vertex_lists)):
-            self.track_vertex_lists[i].vertices = (self.track_nodes[i].flatten() * scale).astype(int)
-
         self.scale = scale
-        self.track_bg.scale = scale
