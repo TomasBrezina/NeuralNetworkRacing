@@ -1,3 +1,4 @@
+
 # NeuralNetworkRacing
 Simple 2D simulation using **pyglet** in which ANN learns to drive a car on a track.
 
@@ -5,7 +6,8 @@ You can download it and create and train a new ANN.
 
 I would be glad for any advice or contribution!
 
-[![AI learns to Race](https://yt-embed.herokuapp.com/embed?v=B0ptl-NChJQ)](https://youtu.be/B0ptl-NChJQ "AI learns to Race")
+## Youtube video:
+[![AI learns to Race](https://i.ibb.co/gmmtYx1/ytthumbnail.png)](https://youtu.be/B0ptl-NChJQ "AI learns to Race")
 
 ## Neural network and Evolution
 Each artificial neural network has number of inputs and outputs. 
