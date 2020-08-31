@@ -16,7 +16,7 @@ The inputs are distance sensors and car speed, these number enter the neural net
 The most successful cars in a generation are parents of next (slightly mutated) generation.
 Over time, the results improve.
 
-![Architectures comparison](http://brez.cz/projects/nn-racing/arch_comp.png)
+![Architectures comparison](http://brez.cz/projects/nn-racing/arch_comp2.png)
 
 ## Enviroment
 The track consists of several line segments. Between them there are checkpoints.
