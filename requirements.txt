@@ -1,0 +1,4 @@
+###### Requirements without Version Specifiers ######`
+pyglet
+numpy
+pillow

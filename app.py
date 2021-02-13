@@ -8,8 +8,10 @@ from os import listdir
 import json
 
 from graphics import Graphics
-from core import Simulation
+from core import Simulation, index_loop
 from neural_network import NeuralNetwork
+
+
 
 # load .json file
 def load_json(directory):
@@ -61,11 +63,22 @@ class App:
     def __init__(self, settings):
         ### NAME OF SAVE ###
         self.savename = "NN"
-        self.simulation = False
 
         self.settings = settings
 
         ### INIT WINDOW ###
+        """ 
+        https://pythonhosted.org/pyglet/api/pyglet.gl.Config-class.html 
+        display = pyglet.canvas.get_display()
+        screen = display.get_default_screen()
+        template = Config(sample_buffers=1, accum_alpha_size=8)
+        try:
+            config = screen.get_best_config(template)
+        except pyglet.window.NoSuchConfigException:
+            print("Invalid config.")
+            template = Config(sample_buffers=1)
+            config = screen.get_best_config(template)
+        """
         self.window = pyglet.window.Window(fullscreen=True, resizable=True)
         self.window.set_caption("NEURAL NETWORK RACING by Tomas Brezina")
 
@@ -84,6 +97,9 @@ class App:
 
         ### LABELS ###
         self.graphics.labels["name"].text = self.savename
+
+        ### USER GUI ###
+        self.selected_car = None
 
         ### VARIABLES ###
         self.show = False  # show track, cps, etc.
@@ -112,16 +128,33 @@ class App:
                     folder="saves"
                 )
         # fullscreen on/off
-        if symbol == key.F:
+        elif symbol == key.F:
             self.window.set_fullscreen(not self.window.fullscreen)
             if not self.window.fullscreen: self.window.set_size(self.settings["WIDTH"], self.settings["HEIGHT"])
-
         # pause on/off
-        if symbol == key.P:
+        elif symbol == key.P:
             self.pause = not self.pause
         # show on/off
-        if symbol == key.O:
+        elif symbol == key.O:
             self.show = not self.show
+        # control camera
+        elif symbol == key.LEFT:
+            self.switch_cars(-1)
+        elif symbol == key.RIGHT:
+            self.switch_cars(1)
+        elif symbol == key.UP:
+            self.selected_car = None
+        elif symbol == key.DOWN:
+            self.selected_car = self.simulation.get_leader()
+
+    # switch cars
+    def switch_cars(self, step):
+        if self.selected_car:
+            new_ind = self.simulation.cars.index(self.selected_car)
+            while True:
+                new_ind -= step
+                self.selected_car = self.simulation.cars[index_loop(new_ind, len(self.simulation.cars))]
+                if self.selected_car.active: break
 
     # when closed (unnecessary)
     def on_close(self):
@@ -130,8 +163,8 @@ class App:
     # when resized
     def on_resize(self, width, height):
         _scale = width / self.settings["WIDTH"]
-        self.graphics.change_scale(_scale)
-        self.simulation.track.change_scale(_scale)
+        self.graphics.set_scale(_scale)
+        #self.simulation.track.change_scale(_scale)
 
     # every frame
     def on_draw(self):
@@ -144,13 +177,11 @@ class App:
         if self.show:
             for car in self.simulation.cars:
                 self.graphics.draw_car_sensors(car)
-            # draw checkpoints
-            self.graphics.draw_cps(self.simulation.track.cps_dict)
             # draw edge of the track
-            self.graphics.draw_lines(self.simulation.track.vertex_list)
-        else:
-            if not self.simulation.track.bg:
-                self.graphics.draw_lines(self.simulation.track.vertex_list)
+            for vl in self.simulation.track.vertex_lists:
+                self.graphics.draw_vertex_list(vl)
+            # draw checkpoints
+            self.graphics.draw_cps(self.simulation.track.cps_arr)
 
     # create new generation from best nns
     def new_generation(self):
@@ -163,6 +194,7 @@ class App:
             images=self.graphics.car_images,
             batch=self.graphics.car_batch
         )
+        self.selected_car = self.simulation.cars[0]
         self.graphics.update_sprites(self.simulation.cars)
         self.graphics.labels["max"].text = "Best score: " + str(self.simulation.max_score)
 
@@ -175,6 +207,15 @@ class App:
                 self.timer = 0
                 self.new_generation()
             self.simulation.update(dt)
+
+            # CAMERA
+            if self.selected_car:
+                if not self.selected_car.active:
+                    self.selected_car = self.simulation.get_leader()
+                self.graphics.set_camera_car(self.selected_car)
+            else:
+                self.graphics.set_camera_default()
+
             # update sprites position and rotation
             self.graphics.update_sprites(self.simulation.cars)
             self.timelimit()
@@ -218,6 +259,8 @@ class App:
                 images=self.graphics.car_images,
                 batch=self.graphics.car_batch
             )
+
+        self.selected_car = self.simulation.get_leader()
         self.graphics.update_sprites(self.simulation.cars)
 
         self.on_resize(self.window.width, self.window.height)
@@ -227,9 +270,7 @@ class App:
 
     def end_simulation(self):
         pyglet.clock.unschedule(self.update)
-        statistics = self.simulation.statistics
         self.simulation = False
-        return statistics
 
     # end
     def exit(self):

@@ -12,6 +12,9 @@ I used a simple Evolutionary algorithm to train the NN.
 
 - Tomáš Březina 2020
 
+Run command:
+pip install -r requirements.txt
+
 Requirements:
 pyglet (graphics)
 numpy (neural network, math, ..)
@@ -28,7 +31,7 @@ settings = {
     "WIDTH": 1280,
     "HEIGHT": 720,
     "friction": 0.8,
-    "render_timestep": 0.03,
+    "render_timestep": 1/40,
     "timeout_seconds": 60,
     "population": 40,
     "mutation_rate": 0.15

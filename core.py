@@ -36,9 +36,7 @@ def dist_between(p0,p1):
     return dist
 
 def index_loop(ind, len):
-    while ind >= len:
-        ind -= len
-    return ind
+    return ind % len if ind >= len else ind
 
 """
 Core of simulation.
@@ -48,13 +46,16 @@ class Simulation:
         self.save_stg = save_stg
         self.friction = 0.9
 
-        self.cars = set()
+        self.cars = []
         self.track = track
 
+        # STATISTICS
         self.max_score = save_stg["best_result"]
         self.current_max_score = 0
         self.gen_count = save_stg["generations"]
-        self.best_nn = None # best nn to save
+
+        # BEST ONES
+        self.best_nn = None  # best nn to save
 
     # first generation with random weights
     def first_generation(self, shape, population, mutation_rate, images, batch):
@@ -69,17 +70,16 @@ class Simulation:
     # new generation based on (best) neural networks
     def new_generation(self, best_nns, population, mutation_rate, images, batch):
         self.gen_count += 1
-        self.cars = set()
+        self.cars = []
         for i in range(population):
             # name, loaded image
             name,image = images[index_loop(i, len(images))]
             sprite = pyglet.sprite.Sprite(image, batch=batch)
             # starting point is on cp (this is important, dont change it)
-            pos = (*self.track.cps_dict[self.track.stg["spawnindex"]], self.track.stg["spawna"])
+            pos = (*self.track.cps_arr[self.track.stg["spawnindex"]], self.track.stg["spawna"])
             # get mutated version of one of best NNs
             best_nn = best_nns[index_loop(i, len(best_nns))].reproduce(mutation_rate)
-            self.cars.add(Car(best_nn, pos, self.save_stg, sprite))
-        return self.cars
+            self.cars.append(Car(best_nn, pos, self.save_stg, sprite))
 
     # return list of best nns (best = highest score (number of cps))
     def get_best_nns(self):
@@ -99,6 +99,11 @@ class Simulation:
             self.best_nn = best_nns[0]
         return best_nns
 
+    # returns current leader
+    def get_leader(self):
+        if self.cars: return max(self.cars, key=lambda car:car.score)
+        else: return None
+
     # get car inputs (sensors and velocity)
     # because of track subdivision
     # only track segments near current cp are tested if sensors intersect with it
@@ -106,8 +111,8 @@ class Simulation:
         inp = ones(car.sensors.shape[0]+1)  # input array
 
         # index of cp on which car currently is
-        cps_lenght = len(self.track.cps_dict)
-        check_ind = index_loop(car.score + self.track.stg["spawnindex"], cps_lenght)
+        cps_length = len(self.track.cps_arr)
+        check_ind = index_loop(car.score + self.track.stg["spawnindex"], cps_length)
 
         # sensors index loop
         for sen_ind in range(car.sensors.shape[0]):
@@ -123,10 +128,10 @@ class Simulation:
             # 1 = next cp
             for plus in [-2, -1, 0, 1]:
                 # current cp
-                cp_ind = index_loop(check_ind + plus, cps_lenght)
-                if cp_ind < 0: cp_ind += cps_lenght
+                cp_ind = index_loop(check_ind + plus, cps_length)
+                if cp_ind < 0: cp_ind += cps_length
                 # line segment which belongs to current cp
-                lines = self.track.lines_dict[cp_ind]
+                lines = self.track.lines_arr[cp_ind]
                 for line in lines:
                     # intersection point (if it exists)
                     intersection = find_intersection(
@@ -151,9 +156,9 @@ class Simulation:
     # check if car is on next checkpoint
     # checkpoint are sorted in a loop so it is only looking for the next cp
     def car_checkpoint(self, car):
-        cps_length = len(self.track.cps_dict)
+        cps_length = len(self.track.cps_arr)
         index = index_loop(car.score + self.track.stg["spawnindex"], cps_length)
-        checkpoint = self.track.cps_dict[index]  # next checkpoint
+        checkpoint = self.track.cps_arr[index]  # next checkpoint
         dist = dist_between((car.xpos, car.ypos), checkpoint)
         if (dist < 70):
             car.score += 1
@@ -171,7 +176,6 @@ class Simulation:
                 # get nn output
                 out = car.nn.forward(inp)
                 # move the car!
-                print(out[1])
                 car.move(self.friction, out[1])  # number between 0 and 1
                 car.turn((out[0]-.5)*2)  # number between -1 and 1
         # if no car is active :(
@@ -187,7 +191,7 @@ class Simulation:
 Track object.
 
 The way this works is the best I have come up with so far. 
-I tried grid subdivision or some lines algorithms, but this is simple, and I will be able to generate tracks randomly.
+I tried grid subdivision or some line intersect. algorithms, but this is simple, and I will be able to generate tracks randomly.
 
 Track consists of several 2-point "gates" in a loop. These points connect to form the edge of a track.
     
@@ -199,30 +203,39 @@ And dont have to find intersection on every line.
 class Track:
     def __init__(self, nodes, stg, bg=False):
         self.nodes = nodes
-        self.vertex_list = (
+        self.batch = pyglet.graphics.Batch()
+        self.vertex_lists = (
             pyglet.graphics.vertex_list(len(self.nodes[0]), ('v2i', (self.nodes[0].flatten()).astype(int))),
             pyglet.graphics.vertex_list(len(self.nodes[1]), ('v2i', (self.nodes[1].flatten()).astype(int)))
         )
         self.bg = bg
 
-        self.lines_dict = {}
-        self.cps_dict = {}
-        lenght = nodes.shape[1]
-        for i in range(lenght):
-            self.lines_dict[i] = np.array([
-                [nodes[0,i],nodes[0,index_loop(i+1, lenght)]],
-                [nodes[1,i],nodes[1,index_loop(i+1, lenght)]]
-            ])
-            # CP is midpoint between 2-point "gate"
-            gate = nodes[:,i]
-            cp = [(gate[0,0] + gate[1,0]) // 2, (gate[0,1] + gate[1,1]) // 2]
-            self.cps_dict[i] = cp
+        # (n, left/right, prev/next, x/y)
+        self.lines_arr = self.nodes_to_lines(nodes)
+        self.cps_arr = self.nodes_to_cps(nodes)
         self.stg = stg
 
+    def nodes_to_lines(self, nodes):
+        """
+        :param nodes: shape (left/right, n, x/y)
+        :return: lines: shape (n, left/right, prev/next, x/y)
+        """
+        lines = np.swapaxes(np.stack((nodes, np.roll(nodes, -1, 1)), axis=2), 0, 1)
+        return lines
+
+    def nodes_to_cps(self, nodes):
+        """
+        :param nodes: shape (left/right, n, x/y)
+        :return: cps: point in the center with shape (n, xy)
+        """
+        center_point = lambda gate: [(gate[0,0] + gate[1,0]) // 2, (gate[0,1] + gate[1,1]) // 2]
+        return np.array([center_point(nodes[:,i,:]) for i in range(nodes.shape[1])])
+
     def change_scale(self, scale):
-        for i in range(len(self.vertex_list)):
-            self.vertex_list[i].vertices = (self.nodes[i].flatten() * scale).astype(int)
-        if self.bg: self.bg.scale = scale
+        pass
+        """for i in range(len(self.vertex_lists)):
+            self.vertex_lists[i].vertices = (self.nodes[i].flatten() * scale).astype(int)
+        if self.bg: self.bg.scale = scale"""
 
 """
 Car object. 
@@ -256,25 +269,20 @@ class Car:
             [25, 120],
         ])
         self.sensors = np.copy(self.sensors_shape)
-        # sensors lengths
-        self.sensors_lengths = np.zeros((self.sensors.shape[0],))
-        for i in range(self.sensors.shape[0]):
-            self.sensors_lengths[i] = dist_between((0,0),self.sensors[i])
+        self.sensors_lengths = [dist_between((0,0), pos) for pos in self.sensors]
 
     # returns translated point (coordinates from perspective of car -> coordinates on screen)
     def translate_point(self, p):
         x, y = p
-        cos = np.cos(radians(self.angle))
-        sin = np.sin(radians(self.angle))
-        new_x = x * cos + y * sin + self.xpos
-        new_y = -(-x * sin + y * cos) + self.ypos
-        return (new_x,new_y)
+        _cos = np.cos(radians(self.angle))
+        _sin = np.sin(radians(self.angle))
+        new_x = x * _cos + y * _sin + self.xpos
+        new_y = -(-x * _sin + y * _cos) + self.ypos
+        return (new_x, new_y)
 
+    # apply translation to every sensor
     def update_sensors(self):
-        for sen_ind in range(self.sensors.shape[0]):
-            def_pos = self.sensors_shape[sen_ind]  # current sensor
-            new_pos = self.translate_point(def_pos)  # sensor coordinates
-            self.sensors[sen_ind] = new_pos
+        self.translate_point(self.sensors)
 
     # tick
     def update(self):
@@ -289,10 +297,9 @@ class Car:
             self.speed = self.save_stg["MAX_SPEED"]
         self.speed *= friction
 
-
     # tick
     def turn(self, direction=1):
-        #direction = 1 or -1
+        # direction = 1 or -1
         self.angle += self.save_stg["ROTATION_SPEED"] * direction
         if self.angle > 360: self.angle -= 360
         if self.angle < 0: self.angle += 360

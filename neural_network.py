@@ -6,10 +6,11 @@ import numpy as np
 def sigmoid(x):
   return 1 / (1 + np.exp(-x))
 
-"""
-Neural network with multiple layers.
-"""
-class NeuralNetwork():
+
+class NeuralNetwork:
+    """
+    Neural network with multiple layers.
+    """
     def __init__(self, shape):
         ### SHAPE ###
         self.size = len(shape) # number of layers
