@@ -30,92 +30,149 @@ Rendering.
 Coordinates [x,y]:
 [0,0] = BOTTOM LEFT
 """
+class Camera:
+    def __init__(self, width, height):
+        self.left = 0
+        self.right = width
+        self.bottom = 0
+        self.top = height
+
+        self.zoom = 1
+        self.zoom_width = width
+        self.zoom_height = height
+
+        self.width = width
+        self.height = height
+
+    def set_zoom(self, x, y, scale):
+        self.zoom /= scale
+        pos_x = x / self.width
+        pos_y = y / self.height
+        real_x = self.left + pos_x * self.zoom_width
+        real_y = self.bottom + pos_y * self.zoom_height
+        self.zoom_width /= scale
+        self.zoom_height /= scale
+
+        self.left = real_x - pos_x * self.zoom_width
+        self.right = real_x + (1 - pos_x) * self.zoom_width
+        self.bottom = real_y - pos_y * self.zoom_height
+        self.top = real_y + (1 - pos_y) * self.zoom_height
+
+    def set_zoom_center(self, scale):
+        self.set_zoom(self.width/2, self.height/2, scale)
+
+    def drag(self, dx, dy):
+        self.left += dx
+        self.right += dx
+        self.bottom += dy
+        self.top += dy
+
+    def set_pos_center(self, x, y):
+        shift_x = self.zoom_width / 2
+        shift_y = self.zoom_height / 2
+        self.left = x - shift_x
+        self.right = x + shift_x
+        self.bottom = y - shift_y
+        self.top = y + shift_y
+
+    def on_resize(self, width, height):
+        self.zoom_width *= width / self.width
+        self.zoom_height *= height / self.height
+        self.width = width
+        self.height = height
+
+class HUD:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+        try:
+            pass
+            #pyglet.font.add_file("graphics/Comfortaa-Bold.ttf")
+            #pyglet.font.add_file("graphics/Comfortaa-Regular.ttf")
+        except:
+            print("Error >> loading font")
+        # LABELS
+        labels_init_dict = {
+            # key:  [text, font_name, bold, size, color, (x,y)]
+            "name": ["","Comfortaa",True,30,(255,255,255,140),(10,75)],
+            "gen": ["Generation: 0","Comfortaa",False,15,(255,255,255,140),(10,12)],
+            "max": ["Best score: 0","Comfortaa",False,15,(255,255,255,140),(10,36)],
+            "time": ["Time: 0 / 0","Comfortaa",False,15,(255,255,255,140),(10,60)],
+            "save": ["[S] Save","Comfortaa",False,15,(255,255,255,140),(200,12)],
+            "full": ["[F] Full","Comfortaa",False,15,(255,255,255,140),(200,36)],
+            "pause": ["[P] Pause","Comfortaa",False,15,(255,255,255,140),(200,60)],
+            "show": ["[O] Show","Comfortaa",False,15,(255,255,255,140),(200,84)],
+            "cam_move": ["[Mouse] Move&Zoom","Comfortaa",False,15,(255,255,255,140),(320,12)],
+            "cam_change": ["[Arrws] Change cars", "Comfortaa", False,15,(255,255,255,140),(320,36)],
+            "cam_free": ["[C] Free Cam","Comfortaa",False,15,(255,255,255,140),(320,60)],
+
+        }
+        self.labels = self.init_labels(labels_init_dict)
+
+    def init_labels(self, label_init):
+        labels = {}
+        for key in label_init:
+            val = label_init[key]
+            labels[key] = pyglet.text.Label(
+                val[0],
+                font_name=val[1],
+                bold=val[2],
+                font_size=val[3],
+                color=val[4],
+                x=val[5][0],
+                y=val[5][1]
+            )
+        return labels
+
+    # draw every label
+    def draw(self):
+        for key in self.labels:
+            self.labels[key].draw()
+
+    def on_resize(self, width, height):
+        pass
+
 class Graphics:
-    def __init__(self, window):
-        # INIT
-        pyglet.gl.glEnable(pyglet.gl.GL_BLEND)
-        pyglet.gl.glBlendFunc(pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_PROGRAM_POINT_SIZE_EXT)
-        self.window = window
-
-        # CAMERA
-        self.scale = 1
-        self.pos = {"x" : 0, "y": 0}
-
+    def __init__(self, width, height):
         self.car_batch = pyglet.graphics.Batch()
-
         self.car_images = []
         for name in racers_info:
             self.car_images.append((name, self.load_car_image("graphics/cars/"+racers_info[name][0])))
 
-        # LABELS
-        self.lb_stg = {
-            "size": [20,700,325,520],
-            "pos" : {
-                "name" : [45,650],
-                "gen" : [45,620],
-                "max": [45, 590],
-                "time": [45, 560],
-                "save": [280, 650],
-                "full": [280, 620],
-                "pause": [280, 590],
-                "show": [280, 560],
-            }
-        }
-        try:
-            pyglet.font.add_file("graphics/Comfortaa-Bold.ttf")
-            pyglet.font.add_file("graphics/Comfortaa-Regular.ttf")
-        except:
-            print("Error >> loading font")
+        self.width = width
+        self.height = height
 
-        ### LABELS ###
-        self.labels = {
-            "name": pyglet.text.Label("", font_name="Comfortaa", bold=True, color=(225, 88, 88, 255), font_size=25, x=40, y=660),
-            "gen": pyglet.text.Label("Generation: 0", font_name="Comfortaa", bold=True, font_size=15, x=500, y=630),
-            "max": pyglet.text.Label("Best score: 0", font_name="Comfortaa", bold=True, font_size=15, x=500, y=600),
-            "time": pyglet.text.Label("Time: 0 / 0", font_name="Comfortaa", bold=True, font_size=15, x=500,y=570),
-            "save": pyglet.text.Label("Save  [S]",font_name="Comfortaa", font_size=15, x=200, y=630),
-            "full": pyglet.text.Label("Full  [F]", font_name="Comfortaa",font_size=15, x=200, y=600),
-            "pause": pyglet.text.Label("Pause [P]", font_name="Comfortaa",font_size=15, x=200, y=570),
-            "show": pyglet.text.Label("Show  [O]", font_name="Comfortaa",font_size=15, x=200, y=540)
-        }
+        # MODULES
+        self.hud = HUD(width, height)
+        self.camera = Camera(width, height)
 
-        # SCALE
-        self.set_scale(self.scale)
+    def on_resize(self, width, height):
+        self.width = width
+        self.height = height
+        self.camera.on_resize(width, height)
+        self.hud.on_resize(width, height)
 
-    def set_scale(self, scale):
-        scale_mult = scale / self.scale
-        glScalef(scale_mult, scale_mult, 1)
-        self.scale = scale
+    def set_camera_view(self):
+        glOrtho(self.camera.left, self.camera.right, self.camera.bottom, self.camera.top, 1, -1)
 
-    def set_camera_car(self, car):
-        new_x = - ((self.window.width // 2) - car.xpos)
-        new_y = - ((self.window.height // 2) - car.ypos)
-        shift_x, shift_y = (self.pos["x"] - new_x) // 5, (self.pos["y"] - new_y) // 5
-        self.pos["x"] -= shift_x
-        self.pos["y"] -= shift_y
-        glTranslatef(shift_x, shift_y, 0)
-
-    def set_camera_default(self):
-        shift_x, shift_y = 0, 0
-        if self.pos["x"] != 0:
-            shift_x = (self.pos["x"] // 5)
-            self.pos["x"] -= shift_x
-        if self.pos["y"] != 0:
-            shift_y = (self.pos["y"] // 5)
-            self.pos["y"] -= shift_y
-        glTranslatef(shift_x, shift_y, 0)
+    def set_default_view(self):
+        glOrtho(0,self.width,0,self.height,1,-1)
 
     def clear(self):
         glClearColor(0.69, 0.76, 0.87, 1)
         glClear(GL_COLOR_BUFFER_BIT)
         glColor3f(1, 1, 1)
 
+    def draw_hud(self):
+        glLoadIdentity()
+        glPushMatrix()
+        glOrtho(0,self.width,0,self.height,1,-1)
+        self.hud.draw()
+        glPopMatrix()
+
     def draw_vertex_list(self, vl):
         vl.draw(GL_LINE_LOOP)
-
-    def draw_bg(self, bg):
-        bg.blit(0, 0, width=1280, height=720)
 
     # draw track details
     def draw_cps(self, cps):
@@ -134,7 +191,7 @@ class Graphics:
                 x=car.xpos,
                 y=car.ypos,
                 rotation=-car.angle - 90,
-                scale=0.09
+                scale=0.11
             )
 
     # load car texture
@@ -143,11 +200,6 @@ class Graphics:
         image.anchor_x = image.width // 2
         image.anchor_y = image.height // 2
         return image
-
-    # draw every label
-    def draw_labels(self):
-        for key in self.labels:
-            self.labels[key].draw()
 
     # draw a line
     def draw_line(self, line, color=(1, 1, 1, 1)):
@@ -158,25 +210,16 @@ class Graphics:
         glEnd()
 
     # draw a point
-    def draw_point(self, point):
+    def draw_point(self, point, size=5):
         glBegin(GL_TRIANGLE_FAN)
         glColor3f(1,.5,.5)
-        glVertex2f((point[0]+2), (point[1]-2))
-        glVertex2f((point[0]+2), (point[1]+2))
-        glVertex2f((point[0]-2), (point[1]+2))
-        glVertex2f((point[0]-2), (point[1]-2))
+        glVertex2f((point[0]+size), (point[1]-size))
+        glVertex2f((point[0]+size), (point[1]+size))
+        glVertex2f((point[0]-size), (point[1]+size))
+        glVertex2f((point[0]-size), (point[1]-size))
         glEnd()
 
     def clear_batch(self):
         del(self.car_batch)
         self.car_batch = pyglet.graphics.Batch()
 
-    """def change_scale(self, scale):
-        self.lb_stg["size"] = (20 * scale, self.window.height - (20 * scale), 325 * scale, self.window.height - (200 * scale))
-        pos = self.lb_stg["pos"]
-        for key in self.labels:
-            label = self.labels[key]
-            label.x = pos[key][0] * scale
-            label.y = self.window.height - ((720 - pos[key][1])*scale)
-            label.font_size = (label.font_size / self.scale) * scale
-        self.scale = scale"""

@@ -76,7 +76,7 @@ class Simulation:
             name,image = images[index_loop(i, len(images))]
             sprite = pyglet.sprite.Sprite(image, batch=batch)
             # starting point is on cp (this is important, dont change it)
-            pos = (*self.track.cps_arr[self.track.stg["spawnindex"]], self.track.stg["spawna"])
+            pos = (*self.track.cps_arr[self.track.spawn_index], self.track.spawn_angle)
             # get mutated version of one of best NNs
             best_nn = best_nns[index_loop(i, len(best_nns))].reproduce(mutation_rate)
             self.cars.append(Car(best_nn, pos, self.save_stg, sprite))
@@ -112,7 +112,7 @@ class Simulation:
 
         # index of cp on which car currently is
         cps_length = len(self.track.cps_arr)
-        check_ind = index_loop(car.score + self.track.stg["spawnindex"], cps_length)
+        check_ind = index_loop(car.score + self.track.spawn_index, cps_length)
 
         # sensors index loop
         for sen_ind in range(car.sensors.shape[0]):
@@ -157,10 +157,10 @@ class Simulation:
     # checkpoint are sorted in a loop so it is only looking for the next cp
     def car_checkpoint(self, car):
         cps_length = len(self.track.cps_arr)
-        index = index_loop(car.score + self.track.stg["spawnindex"], cps_length)
+        index = index_loop(car.score + self.track.spawn_index, cps_length)
         checkpoint = self.track.cps_arr[index]  # next checkpoint
         dist = dist_between((car.xpos, car.ypos), checkpoint)
-        if (dist < 70):
+        if (dist < 120):
             car.score += 1
 
     # behaviour of cars (acceleration, steering)
@@ -201,9 +201,8 @@ When car is at the CP it checks for intersection only with nearby lines belongin
 And dont have to find intersection on every line.
 """
 class Track:
-    def __init__(self, nodes, stg, bg=False):
+    def __init__(self, nodes, spawn_index=0, spawn_angle=0, bg=False):
         self.nodes = nodes
-        self.batch = pyglet.graphics.Batch()
         self.vertex_lists = (
             pyglet.graphics.vertex_list(len(self.nodes[0]), ('v2i', (self.nodes[0].flatten()).astype(int))),
             pyglet.graphics.vertex_list(len(self.nodes[1]), ('v2i', (self.nodes[1].flatten()).astype(int)))
@@ -211,9 +210,10 @@ class Track:
         self.bg = bg
 
         # (n, left/right, prev/next, x/y)
-        self.lines_arr = self.nodes_to_lines(nodes)
-        self.cps_arr = self.nodes_to_cps(nodes)
-        self.stg = stg
+        self.lines_arr = self.nodes_to_lines(self.nodes)
+        self.cps_arr = self.nodes_to_cps(self.nodes)
+        self.spawn_index = spawn_index
+        self.spawn_angle = spawn_angle
 
     def nodes_to_lines(self, nodes):
         """
@@ -263,10 +263,10 @@ class Car:
         #     \  /
         # -----[]-----
         self.sensors_shape = np.array([
-            [25, -120],
-            [170, -70],
-            [170, 70],
-            [25, 120],
+            [25, -140],
+            [190, -100],
+            [190, 100],
+            [25, 140],
         ])
         self.sensors = np.copy(self.sensors_shape)
         self.sensors_lengths = [dist_between((0,0), pos) for pos in self.sensors]

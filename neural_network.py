@@ -52,7 +52,7 @@ class NeuralNetwork:
         return n
 
     # returns slightly mutated version of itself
-    def reproduce(self,mutation):
+    def reproduce(self, mutation):
         n = NeuralNetwork(self.shape)
         for i in range(1, self.size):
             n.weights[i-1] = self.weights[i-1] + ((np.random.rand(self.shape[i-1], self.shape[i]) - .5) * mutation)

@@ -22,9 +22,8 @@ os (not necessary - only in save_neural_network function)
 json (loading and saving settings and saves)
 """
 
-from app import App, load_json, load_track
+from app import App, load_json
 from core import Track
-import pyglet.image
 
 # simulation settings
 settings = {
@@ -32,26 +31,30 @@ settings = {
     "HEIGHT": 720,
     "friction": 0.8,
     "render_timestep": 1/40,
-    "timeout_seconds": 60,
-    "population": 40,
+    "timeout_seconds": 30,
+    "population": 30,
     "mutation_rate": 0.15
 }
 
-# load track
-trackdir = "tracks/track2"
-try: trackbg = pyglet.image.load(trackdir+"/bg.png")
-except: trackbg = False
-track = Track(load_track(trackdir + "/track.csv"), load_json(trackdir + "/track_settings.json"), trackbg)
+from tiles import TileManager
+mng = TileManager()
+mng.load_tiles(root_dir="tiles")
+track = Track(
+    nodes=mng.generate(shape=(4, 3)),
+    spawn_angle=90,
+    spawn_index=0,
+)
 
-NAME = "test" # name of the current NN
-NEW_NEURAL_NETWORK = False
-SAVEFILE = "saves/test5322.json"
+# SETTINGS
+NAME = "test"  # name of the current NN
+NEW_NEURAL_NETWORK = True
+SAVE_FILE = "saves/test.json"
 
 if NEW_NEURAL_NETWORK:
     # create new neural network
     nn_stg = {
-        "ACCELERATION": 3,
-        "MAX_SPEED": 20,
+        "ACCELERATION": 3.5,
+        "MAX_SPEED": 35,
         "ROTATION_SPEED": 3.5,
         "SHAPE": [5, 4, 3, 2],
         "best_result": 0,
@@ -60,14 +63,13 @@ if NEW_NEURAL_NETWORK:
     nn_weights = False
 else:
     # you can change savefile settings in saves folder
-    nn_raw = load_json(SAVEFILE)
+    nn_raw = load_json(SAVE_FILE)
     nn_stg = nn_raw["settings"]
     nn_weights = nn_raw["weights"]
 
 
 # window
 app = App(settings)
-
 app.start_simulation(
     track=track,
     nn_stg=nn_stg,
