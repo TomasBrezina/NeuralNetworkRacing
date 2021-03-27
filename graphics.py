@@ -87,9 +87,8 @@ class HUD:
         self.height = height
 
         try:
-            pass
-            #pyglet.font.add_file("graphics/Comfortaa-Bold.ttf")
-            #pyglet.font.add_file("graphics/Comfortaa-Regular.ttf")
+            pyglet.font.add_file("graphics/Comfortaa-Bold.ttf")
+            pyglet.font.add_file("graphics/Comfortaa-Regular.ttf")
         except:
             print("Error >> loading font")
         # LABELS
