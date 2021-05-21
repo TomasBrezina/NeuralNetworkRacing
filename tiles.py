@@ -168,6 +168,7 @@ class TileManager:
         }
 
     def generate_random(self, shape=(4,3)):
+        """Not working"""
         graph = self._grid_graph(shape=shape)
         # edge path
         path = [(s, 0) for s in range(shape[0])] + [(shape[0]-1, s) for s in range(1, shape[1] - 1)] + \
@@ -241,11 +242,11 @@ class TileManager:
     def generate_from_medium_path(self, path):
         """
         path of MEDIUM_DIM grid coordinates (0-4, 0-4) - 12 points
-        -- 10 20 30 --
-        01          41
-        02          42
-        03          43
         -- 14 24 34 --
+        03          43
+        02          42
+        01          41
+        -- 10 20 30 --
         """
         nodes = np.array([])
         grid_pos = np.array([0, 0])

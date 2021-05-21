@@ -7,18 +7,18 @@ from numpy import loadtxt, empty
 from os import listdir
 import json
 
-from graphics import Graphics, Camera, HUD
+from graphics import Graphics
 from core import Simulation, index_loop
 from neural_network import NeuralNetwork
-
+from evolution import Evolution, get_evolution_from_dict
 
 
 # load .json file
 def load_json(directory):
     try:
         with open(directory) as json_file:
-            stg = json.load(json_file)
-        return stg
+            file = json.load(json_file)
+        return file
     except:
         print("Failed to load: %s" % directory)
         return False
@@ -29,7 +29,7 @@ def save_json(directory,data):
         json.dump(data, json_file)
 
 # save nn as a .json file
-def save_neural_network(name, weigts, settings, folder="saves"):
+def save_neural_network(name, weights, settings, folder="saves"):
     # get name
     savefiles = listdir(folder)
     savename = name
@@ -39,20 +39,11 @@ def save_neural_network(name, weigts, settings, folder="saves"):
         savename = "%s(%s)" % (name, name_count)
     savefile = {
         "settings": settings,
-        "weights": [np_arr.tolist() for np_arr in weigts]
+        "weights": [np_arr.tolist() for np_arr in weights]
     }
     with open(folder+"/"+savename+".json", "w") as json_file:
         json.dump(savefile, json_file)
     print("Saved ", savename)
-
-# load track from a folder
-def load_track(directory):
-    raw = loadtxt(directory, delimiter=",")
-    raw = raw.reshape((raw.shape[0], 2, 2))
-    shaped = empty((2, raw.shape[0], 2))
-    shaped[0,:] = raw[:,0]
-    shaped[1,:] = raw[:,1]
-    return shaped
 
 """
 Window management.
@@ -61,8 +52,9 @@ Window management.
 class App:
     def __init__(self, settings):
         ### NAME OF SAVE ###
-        self.savename = "NN"
+        self.save_name = ""
         self.settings = settings
+        self.evolution = None
 
         ### INIT WINDOW ###
         self.window = pyglet.window.Window(fullscreen=False, resizable=True)
@@ -83,7 +75,7 @@ class App:
 
 
         ### LABELS ###
-        self.graphics.hud.labels["name"].text = self.savename
+        self.graphics.hud.labels["name"].text = ""
 
         ### USER GUI ###
         self.camera_free = False
@@ -206,18 +198,22 @@ class App:
 
     # create new generation from best nns
     def new_generation(self):
-        self.graphics.hud.labels["gen"].text = "Generation: " + str(int(self.simulation.gen_count))
+        self.graphics.hud.labels["gen"].text = "Generation: " + str(int(self.evolution.gen_count))
         self.graphics.clear_batch()
-        self.simulation.new_generation(
-            best_nns=self.simulation.get_best_nns(),
-            population=self.settings["population"],
-            mutation_rate=self.settings["mutation_rate"],
+
+        self.simulation.generate_cars_from_nns(
+            nns=self.evolution.get_new_generation_from_results(
+                self.simulation.get_nns_results(),
+                self.settings["population"]
+            ),
+            parameters=self.evolution.get_car_parameters(),
             images=self.graphics.car_images,
             batch=self.graphics.car_batch
         )
+
         self.camera_selected_car = self.simulation.cars[0]
         self.graphics.update_sprites(self.simulation.cars)
-        self.graphics.hud.labels["max"].text = "Best score: " + str(self.simulation.max_score)
+        self.graphics.hud.labels["max"].text = "Best score: " + str(self.evolution.max_score)
 
     # every frame
     def update(self,dt):
@@ -251,34 +247,37 @@ class App:
         self.graphics.hud.labels["time"].text = "Time: " + str(seconds) + " / " + str(self.settings["timeout_seconds"])
 
     # start of simulation
-    def start_simulation(self, track, nn_stg, nn_weights=False, name="New NN"):
+    def start_simulation(self, track, nn_stg, nn_weights=False):
+
         # init simulation
-        self.savename = name
-        self.simulation = Simulation(track, nn_stg)
+        self.simulation = Simulation(track)
         self.simulation.friction = self.settings["friction"]
+
+        # evolution
+        self.evolution = get_evolution_from_dict(nn_stg, self.settings["mutation_rate"])
+
         # set labels
-        self.graphics.hud.labels["name"].text = self.savename[:10]
-        self.graphics.hud.labels["gen"].text = "Generation: " + str(int(self.simulation.gen_count))
-        self.graphics.hud.labels["max"].text = "Best score: " + str(self.simulation.max_score)
+        self.graphics.hud.labels["name"].text = self.evolution.name[:10]  # first 10 characters to fit screen
+        self.graphics.hud.labels["gen"].text = "Generation: " + str(int(self.evolution.gen_count))
+        self.graphics.hud.labels["max"].text = "Best score: " + str(self.evolution.max_score)
+
+        _nns = []
         # new save or loaded one
         if nn_weights == False:
-            self.simulation.first_generation(
-                shape=self.simulation.save_stg["SHAPE"],
-                population=self.settings["population"],
-                mutation_rate=self.settings["mutation_rate"],
-                images=self.graphics.car_images,
-                batch=self.graphics.car_batch
-            )
+            _nns = self.evolution.get_first_generation(self.settings["population"])
         else:
-            nn = NeuralNetwork(self.simulation.save_stg["SHAPE"])
-            nn.set_weights(nn_weights)
-            self.simulation.load_generation(
-                nn=nn,
-                population=self.settings["population"],
-                mutation_rate=self.settings["mutation_rate"],
-                images=self.graphics.car_images,
-                batch=self.graphics.car_batch
-            )
+            _nn = NeuralNetwork(self.evolution.shape)
+            _nn.set_weights(nn_weights)
+            _nns = [_nn]
+
+        print(_nns)
+
+        self.simulation.generate_cars_from_nns(
+            nns=_nns,
+            parameters=self.evolution.get_car_parameters(),
+            images=self.graphics.car_images,
+            batch=self.graphics.car_batch
+        )
 
         self.camera_selected_car = self.simulation.get_leader()
         self.graphics.update_sprites(self.simulation.cars)
