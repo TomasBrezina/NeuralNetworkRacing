@@ -6,6 +6,8 @@ import numpy as np
 from numpy import cos,sin,radians,sqrt,ones
 from neural_network import NeuralNetwork
 
+from objects import Result
+
 FRICTION = 0.9
 
 # finds intersection between two LINE SEGMENTS
@@ -72,17 +74,17 @@ class Simulation:
     def get_nns_results(self):
         nns_score = []
         for car in self.cars:
-            nns_score.append([
-                car.nn,
-                car.score,
-                dist_between(
+            nns_score.append(Result(
+                nn=car.nn,
+                score=car.score,
+                dist_to_next_cp=dist_between(
                     (car.xpos, car.ypos),
                     self.track.cps_arr[index_loop(
                             car.score + self.track.spawn_index + 1,
                             len(self.track.cps_arr)
                     )]
                 )
-            ])
+            ))
         return nns_score
 
     # returns current leader
@@ -129,7 +131,7 @@ class Simulation:
                     if intersection:
                         dist = dist_between(intersection, (car.xpos, car.ypos))
                         # did the car crah?
-                        if dist < 15:
+                        if dist < 20:
                             car.speed = 0
                             car.active = False
                             car.sprite.opacity = 100

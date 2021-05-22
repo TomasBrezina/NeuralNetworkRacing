@@ -10,7 +10,7 @@ import json
 from graphics import Graphics
 from core import Simulation, index_loop
 from neural_network import NeuralNetwork
-from evolution import Evolution, get_evolution_from_dict
+from evolution import Evolution
 
 
 # load .json file
@@ -59,7 +59,7 @@ class App:
         ### INIT WINDOW ###
         self.window = pyglet.window.Window(fullscreen=False, resizable=True)
         self.window.set_caption("NEURAL NETWORK RACING by Tomas Brezina")
-        if not self.window.fullscreen: self.window.set_size(settings["WIDTH"], settings["HEIGHT"])
+        if not self.window.fullscreen: self.window.set_size(settings["width"], settings["height"])
         self.init_gl()
 
         ### LOAD ICON ###
@@ -106,20 +106,16 @@ class App:
     def on_key_release(self,symbol, modifiers):
         # save the nn
         if symbol == key.S:
-            if self.savename and self.simulation.best_nn:
-                _save_stg = self.simulation.save_stg
-                _save_stg["generations"] = self.simulation.gen_count
-                _save_stg["best_result"] = self.simulation.max_score
-                save_neural_network(
-                    name=self.savename,
-                    weigts=self.simulation.best_nn.weights,
-                    settings=self.simulation.save_stg,
-                    folder="saves"
-                )
+            if self.evolution.name and self.evolution.best_result.nn:
+                self.evolution.save_file()
+            else:
+                print(f"Cannot save.")
+
         # fullscreen on/off
         elif symbol == key.F:
+            self.window.maximize()
             self.window.set_fullscreen(not self.window.fullscreen)
-            if not self.window.fullscreen: self.window.set_size(self.settings["WIDTH"], self.settings["HEIGHT"])
+            if not self.window.fullscreen: self.window.set_size(self.settings["width"], self.settings["height"])
         # pause on/off
         elif symbol == key.P:
             self.pause = not self.pause
@@ -141,6 +137,13 @@ class App:
             self.graphics.camera.set_zoom_center(1.2)
         elif symbol == key.NUM_SUBTRACT:
             self.graphics.camera.set_zoom_center(0.8)
+        elif symbol == key.M:
+            from menu import open_menu
+            self.pause = True
+            #if (self.window.fullscreen):
+                #self.window.set_fullscreen(False)
+                #self.window.maximize()
+            menu = open_menu()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modif):
         if self.camera_free:
@@ -254,7 +257,9 @@ class App:
         self.simulation.friction = self.settings["friction"]
 
         # evolution
-        self.evolution = get_evolution_from_dict(nn_stg, self.settings["mutation_rate"])
+        self.evolution = Evolution()
+        self.evolution.set_parameters_from_dict(nn_stg)
+        self.evolution.mutation_rate = self.settings["mutation_rate"]
 
         # set labels
         self.graphics.hud.labels["name"].text = self.evolution.name[:10]  # first 10 characters to fit screen

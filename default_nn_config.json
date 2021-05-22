@@ -1,0 +1,9 @@
+{
+  "name" : "test",
+  "acceleration": 3.5,
+  "max_speed": 35,
+  "rotation_speed": 3.5,
+  "shape": [5, 4, 3, 2],
+  "max_score": 0,
+  "gen_count": 0
+}

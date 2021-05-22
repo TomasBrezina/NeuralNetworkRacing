@@ -26,16 +26,7 @@ from app import App, load_json
 from core import Track
 
 # simulation settings
-settings = {
-    "WIDTH": 1280,
-    "HEIGHT": 720,
-    "friction": 0.8,
-    "render_timestep": 1/40,
-    "timeout_seconds": 30,
-
-    "population": 100,
-    "mutation_rate": 0.5
-}
+settings = load_json("config.json")
 
 from tiles import TileManager
 mng = TileManager()
@@ -47,20 +38,12 @@ track = Track(
 )
 
 # SETTINGS
-NEW_NEURAL_NETWORK = True
+NEW_NEURAL_NETWORK = False
 SAVE_FILE = "saves/test.json"
 
 if NEW_NEURAL_NETWORK:
     # create new neural network
-    nn_stg = {
-        "name" : "test",
-        "acceleration": 3.5,
-        "max_speed": 35,
-        "rotation_speed": 3.5,
-        "shape": [5, 4, 3, 2],
-        "best_result": 0,
-        "generations": 0
-    }
+    nn_stg = load_json("default_nn_config.json")
     nn_weights = False
 else:
     # you can change savefile settings in saves folder
