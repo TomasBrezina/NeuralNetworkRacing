@@ -90,19 +90,21 @@ class Evolution:
         self.gen_count = par.get("gen_count", self.gen_count)
         self.max_score = par.get("max_score", self.max_score)
 
-    def save_file(self, folder="saves"):
-        # get name
+    def save_file(self, save_name="", folder="saves"):
+
+        # if dir already contains that name
+        """
         files = listdir(folder)
-        save_name = self.name
         name_count = 0
         while save_name + ".json" in files:
             name_count += 1
-            save_name = "%s(%s)" % (self.name, name_count)
+            save_name = "%s(%s)" % (self.name, name_count)"""
+
         save_file = {
             "settings": self.get_save_parameters(),
             "weights": [np_arr.tolist() for np_arr in self.best_result.nn.weights]
         }
-        with open(folder + "/" + save_name + ".json", "w") as json_file:
+        with open(folder + "/" + save_name, "w") as json_file:
             json.dump(save_file, json_file)
         print("Saved ", save_name)
 

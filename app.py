@@ -12,6 +12,8 @@ from core import Simulation, index_loop
 from neural_network import NeuralNetwork
 from evolution import Evolution
 
+from messages import *
+
 
 # load .json file
 def load_json(directory):
@@ -106,10 +108,20 @@ class App:
     def on_key_release(self,symbol, modifiers):
         # save the nn
         if symbol == key.S:
-            if self.evolution.name and self.evolution.best_result.nn:
-                self.evolution.save_file()
+            if self.evolution.best_result.nn:
+                directory = "saves"
+                filename = ask_save_nn_as()
+                if filename:
+                    filename = filename.split("/")[-1]  # filename and ext
+                    self.evolution.save_file(save_name=filename, folder=directory)
+                    show_message(f"Succesfully saved {filename} to /{directory}")
             else:
+                show_error("No neural network to save yet.")
                 print(f"Cannot save.")
+
+        # TODO: load file
+        if symbol == key.L:
+            pass
 
         # fullscreen on/off
         elif symbol == key.F:
@@ -137,13 +149,7 @@ class App:
             self.graphics.camera.set_zoom_center(1.2)
         elif symbol == key.NUM_SUBTRACT:
             self.graphics.camera.set_zoom_center(0.8)
-        elif symbol == key.M:
-            from menu import open_menu
-            self.pause = True
-            #if (self.window.fullscreen):
-                #self.window.set_fullscreen(False)
-                #self.window.maximize()
-            menu = open_menu()
+
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modif):
         if self.camera_free:

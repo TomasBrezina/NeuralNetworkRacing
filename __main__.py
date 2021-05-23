@@ -38,8 +38,10 @@ track = Track(
 )
 
 # SETTINGS
-NEW_NEURAL_NETWORK = False
-SAVE_FILE = "saves/test.json"
+from messages import ask_load_nn
+SAVE_FILE = ask_load_nn("saves")
+print(SAVE_FILE)
+NEW_NEURAL_NETWORK = SAVE_FILE is ""
 
 if NEW_NEURAL_NETWORK:
     # create new neural network

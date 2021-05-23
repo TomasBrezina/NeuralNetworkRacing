@@ -30,7 +30,7 @@ class NeuralNetwork:
     def set_weights(self, weights):
         count = 0
         for layer in weights:
-            self.weights[count] = layer
+            self.weights[count] = np.array(layer)
             count += 1
 
     # output
