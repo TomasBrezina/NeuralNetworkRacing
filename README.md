@@ -18,7 +18,7 @@ Over time, the results improve.
 
 ![Architectures comparison](http://brez.cz/projects/nn-racing/arch_comp2.png)
 
-## Enviroment
+## Environment
 The track consists of several line segments. Between them there are checkpoints.
 ![Track](http://www.brez.cz/projects/nn-racing/nnracing_example1.png)
 
