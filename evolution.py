@@ -22,16 +22,16 @@ class Evolution:
 
         self.mutation_rate = 0
 
-    def get_first_generation(self, population):
+    def get_first_generation(self, population: int):
         nn = NeuralNetwork(self.shape)
         nn.set_random_weights()
         return self.get_new_generation([nn], population)
 
     def load_generation(self, nn: NeuralNetwork, nn_stg: dict, population: int):
-
+        self.set_parameters_from_dict(nn_stg)
         return self.get_new_generation([nn], population)
 
-    def get_new_generation(self, nns, population):
+    def get_new_generation(self, nns: list, population: int):
         self.gen_count += 1
         return [nns[index_loop(i, len(nns))].reproduce(self.mutation_rate) for i in range(population)]
 

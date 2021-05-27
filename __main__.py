@@ -22,42 +22,42 @@ os (not necessary - only in save_neural_network function)
 json (loading and saving settings and saves)
 """
 
+from messages import ask_load_nn, ask_yes_no
 from app import App, load_json
 from core import Track
+from evolution import Evolution
+from tiles import TileManager
 
 # simulation settings
 settings = load_json("config.json")
 
-from tiles import TileManager
-mng = TileManager()
-mng.load_tiles(root_dir="tiles")
+SAVE_FILE = False
+if ask_yes_no(title="Start",message="Load saved NN?"):
+    SAVE_FILE = ask_load_nn("saves")
 
-track = Track(
-    nodes=mng.generate(shape=(4, 3)),
-    spawn_index=10,
-)
-
-# SETTINGS
-from messages import ask_load_nn
-SAVE_FILE = ask_load_nn("saves")
-print(SAVE_FILE)
-NEW_NEURAL_NETWORK = SAVE_FILE is ""
-
-if NEW_NEURAL_NETWORK:
-    # create new neural network
-    nn_stg = load_json("default_nn_config.json")
-    nn_weights = False
-else:
-    # you can change savefile settings in saves folder
+# if save file is  defined
+if SAVE_FILE:
     nn_raw = load_json(SAVE_FILE)
     nn_stg = nn_raw["settings"]
     nn_weights = nn_raw["weights"]
+else:
+    # create new neural network
+    nn_stg = load_json("default_nn_config.json")
+    nn_weights = None
 
+
+
+evolution = Evolution()
+evolution.mutation_rate = settings["mutation_rate"]
+evolution.set_parameters_from_dict(nn_stg)
 
 # window
 app = App(settings)
 app.start_simulation(
-    track=track,
-    nn_stg=nn_stg,
-    nn_weights=nn_weights,
+    track=Track(
+        nodes=app.tile_manager.generate(shape=(5,3)),
+        spawn_index=10
+    ),
+    evolution=evolution,
+    nn_weights = nn_weights
 )

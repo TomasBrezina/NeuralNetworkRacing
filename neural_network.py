@@ -13,18 +13,18 @@ class NeuralNetwork:
     """
     def __init__(self, shape):
         ### SHAPE ###
-        self.size = len(shape) # number of layers
-        self.shape = shape # shape of nn
-        self.weights = [] # weights
+        self.size = len(shape)  # number of layers
+        self.shape = shape  # shape of nn
+        self.weights = []  # weights
 
         ### ZEROS ###
         for i in range(1,self.size):
-            self.weights.append(np.zeros((self.shape[i-1],self.shape[i])))
+            self.weights.append(np.zeros((self.shape[i-1], self.shape[i])))
 
     # set random weights
     def set_random_weights(self):
         for i in range(1,self.size):
-            self.weights[i-1] = np.random.rand(self.shape[i-1],self.shape[i]) - .5
+            self.weights[i-1] = np.random.rand(self.shape[i-1], self.shape[i]) - .5
 
     # set weights
     def set_weights(self, weights):

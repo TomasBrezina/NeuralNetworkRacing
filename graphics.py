@@ -31,11 +31,14 @@ Coordinates [x,y]:
 [0,0] = BOTTOM LEFT
 """
 class Camera:
+
     def __init__(self, width, height):
-        self.left = 0
-        self.right = width
-        self.bottom = 0
-        self.top = height
+        self.MOVEMENT_SPEED = 0.4
+
+        self.x = width / 2
+        self.y = height / 2
+        self.tar_x = self.x
+        self.tar_y = self.y
 
         self.zoom = 1
         self.zoom_width = width
@@ -44,36 +47,47 @@ class Camera:
         self.width = width
         self.height = height
 
+    def update(self):
+        # smooth camera movement
+        diff_x = self.tar_x - self.x
+        diff_y = self.tar_y - self.y
+        shift_x = diff_x * abs(diff_x / self.width) * self.MOVEMENT_SPEED
+        shift_y = diff_y * abs(diff_y / self.height) * self.MOVEMENT_SPEED
+        self.set_pos(self.x + shift_x, self.y + shift_y)
+
+    def set_target(self, x, y):
+        self.tar_x = x
+        self.tar_y = y
+
     def set_zoom(self, x, y, scale):
         self.zoom /= scale
-        pos_x = x / self.width
+
+        """pos_x = x / self.width
         pos_y = y / self.height
-        real_x = self.left + pos_x * self.zoom_width
-        real_y = self.bottom + pos_y * self.zoom_height
+
+        self.x = self.left + pos_x * self.zoom_width
+        self.y = self.bottom + pos_y * self.zoom_height"""
+
         self.zoom_width /= scale
         self.zoom_height /= scale
 
-        self.left = real_x - pos_x * self.zoom_width
-        self.right = real_x + (1 - pos_x) * self.zoom_width
-        self.bottom = real_y - pos_y * self.zoom_height
-        self.top = real_y + (1 - pos_y) * self.zoom_height
 
     def set_zoom_center(self, scale):
         self.set_zoom(self.width/2, self.height/2, scale)
 
     def drag(self, dx, dy):
-        self.left += dx
-        self.right += dx
-        self.bottom += dy
-        self.top += dy
+        self.x += dx
+        self.y += dy
 
-    def set_pos_center(self, x, y):
-        shift_x = self.zoom_width / 2
-        shift_y = self.zoom_height / 2
-        self.left = x - shift_x
-        self.right = x + shift_x
-        self.bottom = y - shift_y
-        self.top = y + shift_y
+    def set_pos(self, x, y):
+        self.x = x
+        self.y = y
+
+    def get_sides(self):
+        x, y = self.x, self.y
+        sx, sy = self.zoom_width / 2, self.zoom_height / 2
+        # left, right, bottom, top
+        return x - sx, x + sx, y - sy, y + sy
 
     def on_resize(self, width, height):
         self.zoom_width *= width / self.width
@@ -153,7 +167,7 @@ class Graphics:
         self.hud.on_resize(width, height)
 
     def set_camera_view(self):
-        glOrtho(self.camera.left, self.camera.right, self.camera.bottom, self.camera.top, 1, -1)
+        glOrtho(*self.camera.get_sides(), 1, -1)
 
     def set_default_view(self):
         glOrtho(0,self.width,0,self.height,1,-1)

@@ -1,6 +1,6 @@
 {
   "name" : "test",
-  "acceleration": 3.5,
+  "acceleration": 2,
   "max_speed": 35,
   "rotation_speed": 3.5,
   "shape": [5, 4, 3, 2],

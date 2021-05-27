@@ -10,10 +10,12 @@ import json
 from graphics import Graphics
 from core import Simulation, index_loop
 from neural_network import NeuralNetwork
+
 from evolution import Evolution
+from core import Track
 
 from messages import *
-
+from tiles import TileManager
 
 # load .json file
 def load_json(directory):
@@ -75,6 +77,9 @@ class App:
         self.simulation = None
         self.graphics = Graphics(self.window.width, self.window.height)
 
+        ### TRACK MANAGER ###
+        self.tile_manager = TileManager()
+        self.tile_manager.load_tiles(root_dir="tiles")
 
         ### LABELS ###
         self.graphics.hud.labels["name"].text = ""
@@ -108,6 +113,7 @@ class App:
     def on_key_release(self,symbol, modifiers):
         # save the nn
         if symbol == key.S:
+            self.window.set_fullscreen(False)
             if self.evolution.best_result.nn:
                 directory = "saves"
                 filename = ask_save_nn_as()
@@ -118,14 +124,16 @@ class App:
             else:
                 show_error("No neural network to save yet.")
                 print(f"Cannot save.")
-
         # TODO: load file
-        if symbol == key.L:
-            pass
-
+        if symbol == key.T:
+            self.change_track(track=Track(
+                nodes=self.tile_manager.generate(shape=(5, 3)),
+                spawn_index=10
+                )
+            )
         # fullscreen on/off
         elif symbol == key.F:
-            self.window.maximize()
+            #self.window.maximize()
             self.window.set_fullscreen(not self.window.fullscreen)
             if not self.window.fullscreen: self.window.set_size(self.settings["width"], self.settings["height"])
         # pause on/off
@@ -149,7 +157,6 @@ class App:
             self.graphics.camera.set_zoom_center(1.2)
         elif symbol == key.NUM_SUBTRACT:
             self.graphics.camera.set_zoom_center(0.8)
-
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modif):
         if self.camera_free:
@@ -239,15 +246,16 @@ class App:
                 if self.camera_selected_car:
                     if not self.camera_selected_car.active:
                         self.camera_selected_car = self.simulation.get_leader()
-                    self.graphics.camera.set_pos_center(self.camera_selected_car.xpos, self.camera_selected_car.ypos)
+                    self.graphics.camera.set_target(self.camera_selected_car.xpos, self.camera_selected_car.ypos)
+                    self.graphics.camera.update()
                 else:
                     pass
             # update sprites position and rotation
             self.graphics.update_sprites(self.simulation.cars)
-            self.timelimit()
+            self.update_timelimit()
 
     # each tick
-    def timelimit(self):
+    def update_timelimit(self):
         self.timer += 1
         if self.timer >= self.timer_limit:
             self.timer = 0
@@ -255,17 +263,20 @@ class App:
         seconds = int(self.timer * self.settings["render_timestep"])
         self.graphics.hud.labels["time"].text = "Time: " + str(seconds) + " / " + str(self.settings["timeout_seconds"])
 
+    def change_track(self, track):
+        self.timer = 0
+        self.simulation.track = track
+        self.new_generation()
+
     # start of simulation
-    def start_simulation(self, track, nn_stg, nn_weights=False):
+    def start_simulation(self, track: Track, evolution: Evolution, nn_weights=None):
 
         # init simulation
         self.simulation = Simulation(track)
         self.simulation.friction = self.settings["friction"]
 
         # evolution
-        self.evolution = Evolution()
-        self.evolution.set_parameters_from_dict(nn_stg)
-        self.evolution.mutation_rate = self.settings["mutation_rate"]
+        self.evolution = evolution
 
         # set labels
         self.graphics.hud.labels["name"].text = self.evolution.name[:10]  # first 10 characters to fit screen
@@ -274,14 +285,12 @@ class App:
 
         _nns = []
         # new save or loaded one
-        if nn_weights == False:
+        if nn_weights == None:
             _nns = self.evolution.get_first_generation(self.settings["population"])
         else:
             _nn = NeuralNetwork(self.evolution.shape)
             _nn.set_weights(nn_weights)
             _nns = [_nn]
-
-        print(_nns)
 
         self.simulation.generate_cars_from_nns(
             nns=_nns,

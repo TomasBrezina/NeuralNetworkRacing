@@ -11,6 +11,10 @@ def open_menu():
     win.mainloop()
     return win
 
+def ask_yes_no(title = "", message = ""):
+    Tk().withdraw()
+    return messagebox.askyesno(title=title, message=message)
+
 def ask_save_nn_as(initialdir="saves"):
     Tk().withdraw()
     return filedialog.asksaveasfilename(
