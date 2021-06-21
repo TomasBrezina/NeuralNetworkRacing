@@ -190,8 +190,9 @@ When car is at the CP it checks for intersection only with nearby lines belongin
 And dont have to find intersection on every line.
 """
 class Track:
-    def __init__(self, nodes, spawn_index=0, spawn_angle=None, bg=False):
+    def __init__(self, nodes, shape, spawn_index=0, spawn_angle=None, bg=False):
         self.nodes = nodes
+        self.shape = shape  # tile shape - eg (5, 3)
         self.vertex_lists = (
             pyglet.graphics.vertex_list(len(self.nodes[0]), ('v2i', (self.nodes[0].flatten()).astype(int))),
             pyglet.graphics.vertex_list(len(self.nodes[1]), ('v2i', (self.nodes[1].flatten()).astype(int)))

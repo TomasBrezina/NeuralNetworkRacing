@@ -54,10 +54,7 @@ evolution.set_parameters_from_dict(nn_stg)
 # window
 app = App(settings)
 app.start_simulation(
-    track=Track(
-        nodes=app.tile_manager.generate(shape=(5,3)),
-        spawn_index=10
-    ),
+    track=app.tile_manager.generate_track(shape=(5,3), spawn_index=0),
     evolution=evolution,
     nn_weights = nn_weights
 )

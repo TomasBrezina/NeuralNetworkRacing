@@ -64,6 +64,7 @@ class App:
         self.window = pyglet.window.Window(fullscreen=False, resizable=True)
         self.window.set_caption("NEURAL NETWORK RACING by Tomas Brezina")
         if not self.window.fullscreen: self.window.set_size(settings["width"], settings["height"])
+        self.window.set_minimum_size(400, 200)
         self.init_gl()
 
         ### LOAD ICON ###
@@ -126,10 +127,8 @@ class App:
                 print(f"Cannot save.")
         # TODO: load file
         if symbol == key.T:
-            self.change_track(track=Track(
-                nodes=self.tile_manager.generate(shape=(5, 3)),
-                spawn_index=10
-                )
+            self.change_track(
+                track=self.tile_manager.generate_track(shape=(5, 3))
             )
         # fullscreen on/off
         elif symbol == key.F:
@@ -196,15 +195,17 @@ class App:
         self.graphics.clear()
         self.graphics.set_camera_view()
 
+        self.simulation.track.bg.blit(0, 0)
+
         #draw cars
         self.graphics.car_batch.draw()
 
-        # draw edge of the track
-        for vl in self.simulation.track.vertex_lists:
-            self.graphics.draw_vertex_list(vl)
-
         # draw hidden details
         if self.show:
+            self.graphics.draw_grid()
+            # draw edge of the track
+            for vl in self.simulation.track.vertex_lists:
+                self.graphics.draw_vertex_list(vl)
             for car in self.simulation.cars:
                 self.graphics.draw_car_sensors(car)
             self.graphics.draw_cps(self.simulation.track.cps_arr)
@@ -270,7 +271,6 @@ class App:
 
     # start of simulation
     def start_simulation(self, track: Track, evolution: Evolution, nn_weights=None):
-
         # init simulation
         self.simulation = Simulation(track)
         self.simulation.friction = self.settings["friction"]

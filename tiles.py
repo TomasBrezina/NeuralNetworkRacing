@@ -3,6 +3,7 @@ from PIL import Image
 from PIL.Image import ROTATE_90, ROTATE_180, ROTATE_270, FLIP_TOP_BOTTOM, FLIP_LEFT_RIGHT
 import os
 import pyglet
+from core import Track
 
 """
 LARGE_SIZE GRID
@@ -88,54 +89,15 @@ def load_track(directory):
     shaped[1,:] = raw[:,1]
     return shaped
 
-def index_loop(ind, len):
-    while ind >= len:
-        ind -= len
-    return ind
-
-class Track:
-
-    def __init__(self, nodes, stg, bg=False):
-        self.nodes = nodes
-        self.vertex_list = (
-            pyglet.graphics.vertex_list(len(self.nodes[0]), ('v2i', (self.nodes[0].flatten()).astype(int))),
-            pyglet.graphics.vertex_list(len(self.nodes[1]), ('v2i', (self.nodes[1].flatten()).astype(int)))
-        )
-        self.bg = bg
-
-        # (n, left/right, prev/next, x/y)
-        self.lines_arr = self.nodes_to_lines(nodes)
-        self.cps_arr = self.nodes_to_cps(nodes)
-        self.stg = stg
-
-    def nodes_to_lines(self, nodes):
-        """
-        :param nodes: shape (left/right, n, x/y)
-        :return: lines: shape (n, left/right, prev/next, x/y)
-        """
-        lines = np.swapaxes(np.stack((nodes, np.roll(nodes, -1, 1)), axis=2), 0, 1)
-        return lines
-
-    def nodes_to_cps(self, nodes):
-        """
-        :param nodes: shape (left/right, n, x/y)
-        :return: cps: point in the center with shape (n, xy)
-        """
-        center_point = lambda gate: [(gate[0,0] + gate[1,0]) // 2, (gate[0,1] + gate[1,1]) // 2]
-        return np.array([center_point(nodes[:,i,:]) for i in range(nodes.shape[1])])
-
-    def change_scale(self, scale):
-        for i in range(len(self.vertex_list)):
-            self.vertex_list[i].vertices = (self.nodes[i].flatten() * scale).astype(int)
-        if self.bg: self.bg.scale = scale
 
 
 class Tile:
 
-    def __init__(self, arr, inp, out):
+    def __init__(self, arr, inp, out, image=None):
         self.inp = inp  # (x, y)
         self.out = out  # (x, y)
         self.arr = arr  # (left / right, n, x / y)
+        self.image = image
 
     def inp_out_to_ndarray(self):
         return np.array([[self.inp, self.out]])
@@ -146,10 +108,11 @@ class Tile:
 
 class TileManager:
     """
-    03 13 23 33
-    02 12 22 32
-    01 11 21 31
-    00 10 20 30
+    00 10 20 30 40
+    01 11 21 31 41
+    02 12 22 32 42
+    04 14 24 34 44
+    03 13 23 33 43
     """
     def __init__(self, shape=5):
         self.shape = shape
@@ -163,45 +126,55 @@ class TileManager:
                 [[0,0],[1,0],[2,0],[3,0],[3,1],[3,2],[2,2],[1,2],[0,2],[0,1]]
             ],
             (5, 3): [
-                [[0,0], [1,0], [2,0], [3,0], [4,0], [4,1], [4,2], [3,2], [2,2], [1,2], [0,2], [0,1]]
+                # 0 1 2 3 4
+                # b       5
+                # a 9 8 7 6
+                [[0,0], [1,0], [2,0], [3,0], [4,0], [4,1], [4,2], [3,2], [2,2], [1,2], [0,2], [0,1]],
+                # 0 1 2 3 4
+                # d a 9 8 5
+                # c b   7 6
+                [[0,0], [1,0], [2,0], [3,0], [4,0], [4,1], [4,2], [3,2], [3,1], [2,1], [1,1], [1,2], [0,2], [0,1]],
+                # 0 1 2 3 4
+                # b a 9 8 5
+                #       7 6
+                [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [4, 1], [4, 2], [3, 2], [3, 1], [2, 1], [1, 1], [0, 1]]
             ]
         }
 
-    def generate_random(self, shape=(4,3)):
-        """Not working"""
-        graph = self._grid_graph(shape=shape)
-        # edge path
-        path = [(s, 0) for s in range(shape[0])] + [(shape[0]-1, s) for s in range(1, shape[1] - 1)] + \
-               [(s, shape[1] - 1) for s in range(shape[0] - 1, 0, -1)] + [(0, s) for s in range(shape[1] - 1, 0, -1)]
-        for node in path:
-            graph[node][1] = True
+    def generate_track(self, shape=(5, 3), spawn_index=0):
+        tile_grid = self.generate_tile_grid(shape)
+        nodes = np.array([])
 
-    def _grid_graph(self, shape=(3,2)):
-        """Creates a 2D square lattice graph."""
-        graph = {}
-        for i in range(shape[0]):
-            for j in range(shape[1]):
-                graph[(i, j)] = [[], False]
-                for si, sj in [(-1, 0), (0, -1), (1, 0), (0, 1)]:
-                    ti, tj = i + si, j + sj
-                    if (0 <= ti < shape[0]) and (0 <= tj < shape[1]):
-                        graph[(i, j)][0].append((ti, tj))
-        return graph
+        """image = pyglet.image.Texture.create(
+            shape[0] * LARGE_SIZE,
+            shape[1] * LARGE_SIZE,
+            force_rectangle=True
+        )"""
+        size_x, size_y = shape[0] * LARGE_SIZE, shape[1] * LARGE_SIZE
+        image = Image.new('RGBA', (
+            size_x, size_y
+        ))
 
-    def _find_path(self, graph, start, end, path=[]):
-        path = path + [start]
-        if start == end:
-            return path
-        if start not in graph:
-            return None
-        for node in graph[start][0]:
-            if node not in path and not graph[start][1]:
-                newpath = self._find_path(graph, node, end, path)
-                if newpath: return newpath
-        return None
+        for grid_pos, tile in tile_grid:
+            nodes = self.add_tile_to_arr(nodes, grid_pos, tile)
+            # paste tiles to image - reverse y axis
+            image.paste(tile.image, (grid_pos[0] * LARGE_SIZE, (shape[1] - grid_pos[1] - 1) * LARGE_SIZE))
+            #image.blit_into(tile.image, grid_pos[0] * LARGE_SIZE, grid_pos[1] * LARGE_SIZE, 0)
 
-    def _grip_to_path(self, grid_coords):
-        # path of grid coordinates to tile path
+        # convert PIL image to pyglet image from bytes
+        image = image.transpose(FLIP_TOP_BOTTOM)
+        pyglet_image = pyglet.image.ImageData(size_x, size_y, 'RGBA', image.tobytes())
+        return Track(
+            shape=shape,
+            nodes=nodes,
+            spawn_index=spawn_index,
+            bg=pyglet_image
+        )
+
+
+
+    def _grid_to_path(self, grid_coords):
+        # path of grid coordinates to direction path
         path = []
         first = grid_coords[0]
         prev = first
@@ -212,21 +185,26 @@ class TileManager:
         path.append([1 + (first[0] - prev[0]), 1 - (first[1] - prev[1])])
         return path
 
-    def generate(self, shape=(5, 3)):
-        return self.generate_from_large_path(self._grip_to_path(self.GRID_PATHS[shape][0]))
+    def get_random_grid_path(self, shape):
+        # choose one of defined grid paths
+        return self.GRID_PATHS[shape][np.random.randint(len(self.GRID_PATHS[shape]))]
 
-    def generate_from_large_path(self, out_path, inp_start=None):
+    def generate_tile_grid(self, shape=(5, 3)):
+        """Generate array of track nodes."""
+        return self.generate_tile_grid_from_large_path(shape, self._grid_to_path(self.get_random_grid_path(shape)))
+
+    def generate_tile_grid_from_large_path(self, shape, out_path, inp_start=None):
         """
         path of LARGE_DIM grid coordinates (0-2, 0-2) - 4 sides
-        -- 10 --
-        01    21
         -- 12 --
+        01    21
+        -- 10 --
         """
         if inp_start is None:
             inp_start = GRID_OUT_TO_INP(out_path[-1], size=3)
         def l_to_m(c):
             if c[0] == 1:
-                return [np.random.randint(1,4), 0 if c[1] == 0 else 4]
+                return [np.random.randint(1,4), 4 if c[1] == 0 else 0]
             if c[1] == 1:
                 return [0 if c[0] == 0 else 4, np.random.randint(1, 4)]
         m_path = []
@@ -237,24 +215,25 @@ class TileManager:
             m_path.append([m_inp, m_out])
             m_inp = GRID_OUT_TO_INP(m_out, size=MEDIUM_DIM)
         m_path[-1][1] = GRID_OUT_TO_INP(first, size=MEDIUM_DIM)
-        return self.generate_from_medium_path(m_path)
+        return self.generate_tile_grid_from_medium_path(shape, m_path)
 
-    def generate_from_medium_path(self, path):
+    def generate_tile_grid_from_medium_path(self, shape, path):
         """
-        path of MEDIUM_DIM grid coordinates (0-4, 0-4) - 12 points
+        input: path of MEDIUM_DIM grid coordinates (0-4, 0-4) - 12 points
         -- 14 24 34 --
         03          43
         02          42
         01          41
         -- 10 20 30 --
+        output: array of [coordinates in a grid, tile]
         """
-        nodes = np.array([])
+        tile_grid = []
         grid_pos = np.array([0, 0])
         for inp, out in path:
             tile = self.tiles[COORDS_TO_STR(inp) + COORDS_TO_STR(out)][0]
-            nodes = self.add_tile_to_arr(nodes, grid_pos, tile)
+            tile_grid.append((grid_pos.copy(), tile))
             grid_pos += GRID_SHIFT(out, size=MEDIUM_DIM)
-        return nodes
+        return tile_grid
 
     def add_tile_to_arr(self, arr, grid_pos, tile):
         con_arr = tile.arr.copy()
@@ -271,21 +250,33 @@ class TileManager:
             ├── tile.png
             └── tile.svg
         """
-        print(root_dir)
         tiles = []
         dirs = os.scandir(root_dir) if root_dir else os.scandir()
         for dir in dirs:
             if os.path.isdir(dir):
                 files = os.scandir(dir)
+
+                is_tile = False
+                arr, inp, out, num, img = None, None, None, None, None
                 for file in files:
                     name = os.path.basename(file)[:-4]
                     ext = os.path.splitext(file)[-1].lower()
                     if ext == ".csv":
+                        is_tile = True
                         arr = load_track(file)
                         # YX_YX_N ??
                         # "00_00_0" --> [0, 0] [0, 0] [0]
                         inp, out, num = map(lambda n: [int(s) for s in n], name.split("_"))
-                        tiles.append(Tile(arr, inp, out))
+                    if ext == ".png":
+                        #img = pyglet.image.load(os.path.abspath(file)).get_texture(rectangle=True)
+                        img = Image.open(os.path.abspath(file))
+                if is_tile:
+                    try:
+                        print(f"{os.path.basename(dir)} {img}")
+                        tiles.append(Tile(arr, inp, out, image=img))
+                    except:
+                        print(f"Error loading {os.path.basename(dir)}")
+
         self.tiles = self.variate_tiles(tiles)
         return tiles
 
@@ -319,13 +310,15 @@ class TileManager:
         arr = self._rot_3d_arr(tile.arr, n, LARGE_SIZE)
         inp = self._rot_1d_arr(tile.inp, n, MEDIUM_DIM)
         out = self._rot_1d_arr(tile.out, n, MEDIUM_DIM)
-        return Tile(arr=arr, inp=inp, out=out)
+        img = self._rot_img(tile.image, n)
+        return Tile(arr=arr, inp=inp, out=out, image=img)
 
     def flip_tile(self, tile):
         arr = self._flip_3d_arr(tile.arr, LARGE_SIZE)
         inp = self._flip_1d_arr(tile.inp, MEDIUM_DIM)
         out = self._flip_1d_arr(tile.out, MEDIUM_DIM)
-        return Tile(arr=arr, inp=inp, out=out)
+        img = self._flip_img(tile.image)
+        return Tile(arr=arr, inp=inp, out=out, image=img)
 
     def _rot_3d_arr(self, arr, n, max_dim = 5):
         # rot 90 deg * n
@@ -342,6 +335,10 @@ class TileManager:
             _coor[0], _coor[1] = _coor[1], max_dim - _coor[0] - 1
         return _coor
 
+    def _rot_img(self, img, n):
+        return img.rotate(n * -90)
+        # return img.get_transform(rotate=n * 90)
+
     def _flip_3d_arr(self, arr, max_dim = 5):
         # flip on y axis
         _arr = np.copy(arr)
@@ -355,10 +352,9 @@ class TileManager:
         _arr = np.array([arr[0], max_dim - arr[1] - 1])
         return _arr
 
-    def edit_image(self, img, rot=0, flip=0):
-        img.transpose([ROTATE_90, ROTATE_180, ROTATE_270][rot])
-        return img
-
+    def _flip_img(self, img):
+        return img.transpose(FLIP_TOP_BOTTOM)
+        # return img.get_transform(flip_x=True).get_texture(rectangle=True)
 
 """
 dirs = os.scandir("NOT YET")

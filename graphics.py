@@ -160,6 +160,13 @@ class Graphics:
         self.hud = HUD(width, height)
         self.camera = Camera(width, height)
 
+    def draw_grid(self):
+        step = 768
+        for i in range(0, 15):
+            self.draw_line([[i * step, -10 * step], [i * step, 14 * step]], (1, 1, 1, 0.3))
+        for i in range(0, 15):
+            self.draw_line([[-10 * step, i * step], [14 * step, i * step]], (1, 1, 1, 0.3))
+
     def on_resize(self, width, height):
         self.width = width
         self.height = height
