@@ -1,46 +1,55 @@
-from tkinter import *
+import tkinter as tk
+from tkinter.ttk import *
 
-class Menu:
+class SettingsMenu:
+
     def __init__(self):
-        self.root = Tk()
-        self.root.geometry("300x500")
+        self.root = tk.Toplevel()
+        self.root.geometry("300x400")
         self.root.configure(bg="white")
 
+        #self.root.protocol("WM_DELETE_WINDOW", self.quit)
+
+        self.frame = tk.Frame(self.root)
+        self.frame.configure(bg="white")
+
+        self.label = Label(self.frame, text="Settings", font=("Helvetica", 16, "bold"), background="white")
+
         self.buttons = {
-            "new" : Button(self.root, text="New NN"),
-            "load" : Button(self.root, text="Load NN"),
-            "save" : Button(self.root, text="Save NN"),
-            "ok" : Button(self.root, text="Save settings")
+            "new": Button(self.frame, text="New NN"),
+            "load": Button(self.frame, text="Load NN"),
+            "save": Button(self.frame, text="Save NN"),
+            "ok": Button(self.frame, text="Save settings")
         }
         self.widgets = {
-            "friction" : (
-                Label(self.root, text="Friction"),
-                Spinbox(self.root, from_=0, to=5)
+            "friction": (
+                Label(self.frame, text="Friction"),
+                Spinbox(self.frame, from_=0, to=5, width=8)
             ),
-            "timeout_seconds" : (
-                Label(self.root, text="Time to live"),
-                Spinbox(self.root)
+            "timeout_seconds": (
+                Label(self.frame, text="Time to live"),
+                Spinbox(self.frame, width=8)
             ),
-            "population" : (
-                Label(self.root, text="Population"),
-                Spinbox(self.root)
+            "population": (
+                Label(self.frame, text="Population"),
+                Spinbox(self.frame, width=8)
             ),
             "mutation_rate": (
-                Label(self.root, text="Mutation rate"),
-                Spinbox(self.root)
+                Label(self.frame, text="Mutation rate"),
+                Spinbox(self.frame, width=8)
             ),
             "new_track_every_round": (
-                Label(self.root, text="New track after every round"),
-                Checkbutton(self.root)
+                Label(self.frame, text="New track after every round"),
+                tk.Checkbutton(self.frame)
             )
         }
 
-
         # grid config
         for row in range(10):
-            Grid.rowconfigure(self.root, row, weight=1)
-        for col in range(4):
-            Grid.columnconfigure(self.root, col, weight=1)
+            tk.Grid.rowconfigure(self.frame, row, weight=1)
+        for col in range(2):
+            tk.Grid.columnconfigure(self.frame, col, weight=2)
+        tk.Grid.columnconfigure(self.frame, 2, weight=1)
 
         self._place_widgets()
 
@@ -55,30 +64,27 @@ class Menu:
         self.widgets["timeout_seconds"][1].insert(0, timeout_seconds)
         self.widgets["population"][1].insert(0, population)
         self.widgets["mutation_rate"][1].insert(0, mutation_rate)
+
         if new_track_every_round:
             self.widgets["new_track_every_round"][1].select()
         else:
             self.widgets["new_track_every_round"][1].deselect()
-    def _place_widgets(self):
-        self.buttons["new"].grid(row=0, column=1, columnspan=2, sticky="WE")
-        self.buttons["load"].grid(row=1, column=1, columnspan=2, sticky="WE")
-        self.buttons["save"].grid(row=2, column=1, columnspan=2, sticky="WE")
 
-        i = 3
+    def _place_widgets(self):
+        self.frame.pack(anchor=tk.CENTER, fill=tk.BOTH, expand=True, padx=30, pady=30)
+        self.label.grid(row=0, column=0, columnspan=3)
+        i = 1
+        for key in ("new", "load", "save"):
+            self.buttons[key].grid(row=i, column=0, columnspan=3, sticky="WE")
+            i += 1
         for key in self.widgets:
             label, widget = self.widgets[key]
-            label.grid(row=i, column=1)
-            widget.grid(row=i, column=2)
+            label.grid(row=i, column=0, columnspan=2, sticky="W")
+            widget.grid(row=i, column=2, sticky="E")
             i += 1
 
-        self.buttons["ok"].grid(row=8, column=1, columnspan=2, sticky="WE")
+        self.buttons["ok"].grid(row=i, column=0, columnspan=3, sticky="WE")
 
-m = Menu()
-m.set_values(
-    friction=0.5,
-    population=10,
-    mutation_rate=0.5,
-    timeout_seconds=30,
-    new_track_every_round=True
-)
-m.root.mainloop()
+    def run(self):
+        self.root.wait_window()
+

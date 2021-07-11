@@ -11,9 +11,10 @@ from graphics import Graphics
 from core import Simulation, index_loop
 from neural_network import NeuralNetwork
 
-from evolution import Evolution
+from evolution import Evolution, Entity
 from core import Track
 
+from menu import SettingsMenu
 from messages import *
 from tiles import TileManager
 
@@ -56,9 +57,7 @@ Window management.
 class App:
     def __init__(self, settings):
         ### NAME OF SAVE ###
-        self.save_name = ""
         self.settings = settings
-        self.evolution = None
 
         ### INIT WINDOW ###
         self.window = pyglet.window.Window(fullscreen=False, resizable=True)
@@ -75,7 +74,11 @@ class App:
             print("Error >>> Loading icon")
 
         ### MODULES ###
-        self.simulation = None
+        self.entity = None
+
+        self.simulation = Simulation()
+        self.evolution = Evolution()
+        self.evolution.mutation_rate = self.settings["mutation_rate"]
         self.graphics = Graphics(self.window.width, self.window.height)
 
         ### TRACK MANAGER ###
@@ -96,7 +99,7 @@ class App:
         self.timer_limit = self.settings["timeout_seconds"] // self.settings["render_timestep"]  # max ticks
 
         ### BIND EVENTS ###
-        self.window.event(self.on_key_release)
+        self.window.event(self.on_key_press)
         self.window.event(self.on_close)
         self.window.event(self.on_resize)
         self.window.event(self.on_draw)
@@ -111,7 +114,7 @@ class App:
         glEnable(GL_PROGRAM_POINT_SIZE_EXT)
 
     # when key is released
-    def on_key_release(self,symbol, modifiers):
+    def on_key_press(self,symbol, modifiers):
         # save the nn
         if symbol == key.S:
             self.window.set_fullscreen(False)
@@ -130,6 +133,9 @@ class App:
             self.change_track(
                 track=self.tile_manager.generate_track(shape=(5, 3))
             )
+
+        elif symbol == key.DELETE:
+            self.end_simulation()
         # fullscreen on/off
         elif symbol == key.F:
             #self.window.maximize()
@@ -215,22 +221,23 @@ class App:
 
     # create new generation from best nns
     def new_generation(self):
-        self.graphics.hud.labels["gen"].text = "Generation: " + str(int(self.evolution.gen_count))
         self.graphics.clear_batch()
 
+        results = self.simulation.get_nns_results()
         self.simulation.generate_cars_from_nns(
             nns=self.evolution.get_new_generation_from_results(
-                self.simulation.get_nns_results(),
+                results,
                 self.settings["population"]
             ),
-            parameters=self.evolution.get_car_parameters(),
+            parameters=self.entity.get_car_parameters(),
             images=self.graphics.car_images,
             batch=self.graphics.car_batch
         )
+        self.entity.set_nn_from_result(self.evolution.find_best_result(results))
 
+        self.update_labels(self.entity)
         self.camera_selected_car = self.simulation.cars[0]
         self.graphics.update_sprites(self.simulation.cars)
-        self.graphics.hud.labels["max"].text = "Best score: " + str(self.evolution.max_score)
 
     # every frame
     def update(self,dt):
@@ -264,37 +271,35 @@ class App:
         seconds = int(self.timer * self.settings["render_timestep"])
         self.graphics.hud.labels["time"].text = "Time: " + str(seconds) + " / " + str(self.settings["timeout_seconds"])
 
+    # update labels from self entity
+    def update_labels(self, entity: Entity):
+        self.graphics.hud.labels["name"].text = self.entity.name[:10]  # first 10 characters to fit screen
+        self.graphics.hud.labels["gen"].text = "Generation: " + str(int(self.entity.gen_count))
+        self.graphics.hud.labels["max"].text = "Best score: " + str(self.entity.max_score)
+
     def change_track(self, track):
         self.timer = 0
         self.simulation.track = track
         self.new_generation()
 
     # start of simulation
-    def start_simulation(self, track: Track, evolution: Evolution, nn_weights=None):
-        # init simulation
-        self.simulation = Simulation(track)
-        self.simulation.friction = self.settings["friction"]
+    def start_simulation(self, entity: Entity, track: Track=None):
 
-        # evolution
-        self.evolution = evolution
+        # entity
+        self.entity = entity
+
+        # set track or generate random
+        self.simulation.track = track if track is not None else self.tile_manager.generate_track(shape=(5, 3))
 
         # set labels
-        self.graphics.hud.labels["name"].text = self.evolution.name[:10]  # first 10 characters to fit screen
-        self.graphics.hud.labels["gen"].text = "Generation: " + str(int(self.evolution.gen_count))
-        self.graphics.hud.labels["max"].text = "Best score: " + str(self.evolution.max_score)
-
-        _nns = []
-        # new save or loaded one
-        if nn_weights == None:
-            _nns = self.evolution.get_first_generation(self.settings["population"])
-        else:
-            _nn = NeuralNetwork(self.evolution.shape)
-            _nn.set_weights(nn_weights)
-            _nns = [_nn]
+        self.update_labels(self.entity)
 
         self.simulation.generate_cars_from_nns(
-            nns=_nns,
-            parameters=self.evolution.get_car_parameters(),
+            nns=self.evolution.get_new_generation(
+                [self.entity.get_nn()],
+                self.settings["population"]
+            ),
+            parameters=self.entity.get_car_parameters(),
             images=self.graphics.car_images,
             batch=self.graphics.car_batch
         )

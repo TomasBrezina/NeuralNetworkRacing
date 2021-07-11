@@ -8,7 +8,6 @@ from neural_network import NeuralNetwork
 
 from objects import Result
 
-FRICTION = 0.9
 
 # finds intersection between two LINE SEGMENTS
 def find_intersection( p0, p1, p2, p3 ) :
@@ -52,7 +51,7 @@ Core of simulation.
 """
 class Simulation:
 
-    def __init__(self, track):
+    def __init__(self, track=None):
         self.cars = []
         self.track = track
 
@@ -165,7 +164,7 @@ class Simulation:
                 # get nn output
                 out = car.nn.forward(inp)
                 # move the car!
-                car.move(FRICTION, out[1])  # number between 0 and 1
+                car.move(out[1])  # number between 0 and 1
                 car.turn((out[0]-.5)*2)  # number between -1 and 1
         # if no car is active :(
         if inactive: return False
@@ -245,6 +244,7 @@ class Car:
             accerelation,
             max_speed,
             rotation_speed
+            friction
         }
         """
         self.param = parameters
@@ -294,11 +294,11 @@ class Car:
             self.ypos += sin(radians(self.angle)) * self.speed
 
     # tick
-    def move(self, friction, direction=1):
+    def move(self, direction=1):
         self.speed += self.param["acceleration"] * direction
         if self.speed > self.param["max_speed"]:
             self.speed = self.param["max_speed"]
-        self.speed *= friction
+        self.speed *= self.param["friction"]
 
     # tick
     def turn(self, direction=1):

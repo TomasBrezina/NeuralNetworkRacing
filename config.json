@@ -1,7 +1,7 @@
 {
     "width": 1280,
     "height": 720,
-    "friction": 0.8,
+    "friction": 0.1,
     "render_timestep": 0.025,
     "timeout_seconds": 30,
 
