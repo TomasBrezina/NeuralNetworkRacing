@@ -120,7 +120,7 @@ Class containing info about NNs and its parameters & generates new generations.
 """
 class Evolution:
     def __init__(self):
-        self.best_result = None
+        self.best_result = Result(None, -1, 0)
         self.mutation_rate = 0
 
     def load_generation(self, nn: NeuralNetwork, nn_stg: dict, population: int):
