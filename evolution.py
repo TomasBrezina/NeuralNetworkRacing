@@ -90,6 +90,7 @@ class Entity:
             name_count += 1
             save_name = "%s(%s)" % (self.name, name_count)"""
 
+        if not save_name.endswith(".json"): save_name += ".json"
         save_file = {
             "settings": self.get_save_parameters(),
             "weights": [np_arr.tolist() for np_arr in self.nn.weights]

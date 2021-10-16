@@ -24,9 +24,7 @@ json (loading and saving settings and saves)
 
 from messages import ask_load_nn, ask_yes_no
 from app import App, load_json
-from core import Track
 from evolution import Evolution, Entity
-from tiles import TileManager
 
 # simulation settings
 settings = load_json("config.json")

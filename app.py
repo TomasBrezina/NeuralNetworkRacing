@@ -123,7 +123,7 @@ class App:
                 filename = ask_save_nn_as()
                 if filename:
                     filename = filename.split("/")[-1]  # filename and ext
-                    self.evolution.save_file(save_name=filename, folder=directory)
+                    self.entity.save_file(save_name=filename, folder=directory)
                     show_message(f"Succesfully saved {filename} to /{directory}")
             else:
                 show_error("No neural network to save yet.")
