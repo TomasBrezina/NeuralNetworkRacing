@@ -81,7 +81,6 @@ class Entity:
         self.max_score = par.get("max_score", self.max_score)
 
     def save_file(self, save_name="", folder="saves"):
-
         # if dir already contains that name
         """
         files = listdir(folder)
@@ -89,8 +88,8 @@ class Entity:
         while save_name + ".json" in files:
             name_count += 1
             save_name = "%s(%s)" % (self.name, name_count)"""
-
-        if not save_name.endswith(".json"): save_name += ".json"
+        if not save_name.endswith(".json"):
+            save_name += ".json"
         save_file = {
             "settings": self.get_save_parameters(),
             "weights": [np_arr.tolist() for np_arr in self.nn.weights]

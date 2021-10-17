@@ -5,6 +5,7 @@ import pyglet
 import numpy as np
 from numpy import cos,sin,radians,sqrt,ones
 from neural_network import NeuralNetwork
+from graphics import CarInfo
 
 from objects import Result
 
@@ -55,6 +56,8 @@ class Simulation:
         self.cars = []
         self.track = track
 
+        self.checkpoint_range = [-3, -2, -1, 0, 1]
+
     def generate_cars_from_nns(self, nns, parameters, images, batch):
         self.cars = []
         for i in range(len(nns)):
@@ -68,6 +71,15 @@ class Simulation:
                 parameters=parameters,
                 sprite=sprite
             ))
+
+    def get_closest_car_to(self, x, y):
+        closest_car, dist = None, float("inf")
+        for car in self.cars:
+            new_dist = dist_between((x,y), (car.xpos, car.ypos))
+            if new_dist < dist:
+                dist = new_dist
+                closest_car = car
+        return closest_car, dist
 
     # return list  [nn, cp_score, dist_to_next_cp]
     def get_nns_results(self):
@@ -93,6 +105,16 @@ class Simulation:
         else:
             return None
 
+    # debug
+    def get_car_cp_lines(self, car):
+        lines_arr = []
+        check_ind = index_loop(car.score + self.track.spawn_index, len(self.track.cps_arr))
+        for plus in self.checkpoint_range:
+            current_check_ind = index_loop(check_ind + plus, len(self.track.cps_arr))
+            lines = self.track.lines_arr[current_check_ind]
+            lines_arr.append(lines)
+        return lines_arr
+
     # get car inputs (sensors and velocity)
     # because of track subdivision
     # only track segments near current cp are tested if sensors intersect with it
@@ -115,7 +137,7 @@ class Simulation:
             # -1 previous cp
             # 0 = current cp
             # 1 = next cp
-            for plus in [-2, -1, 0, 1]:
+            for plus in self.checkpoint_range:
                 # current cp
                 cp_ind = index_loop(check_ind + plus, cps_length)
                 if cp_ind < 0: cp_ind += cps_length
@@ -130,7 +152,7 @@ class Simulation:
                     if intersection:
                         dist = dist_between(intersection, (car.xpos, car.ypos))
                         # did the car crah?
-                        if dist < 20:
+                        if dist < 30:
                             car.speed = 0
                             car.active = False
                             car.sprite.opacity = 100
@@ -274,6 +296,8 @@ class Car:
         self.sensors = np.copy(self.sensors_shape)
         self.sensors_lengths = [dist_between((0,0), pos) for pos in self.sensors]
 
+        self.info = CarInfo()
+
     # returns translated point (coordinates from perspective of car -> coordinates on screen)
     def translate_point(self, p):
         x, y = p
@@ -282,6 +306,11 @@ class Car:
         new_x = x * _cos + y * _sin + self.xpos
         new_y = -(-x * _sin + y * _cos) + self.ypos
         return (new_x, new_y)
+
+    def update_info(self):
+        self.info.labels["active"].text = self.active
+        self.info.labels["score"].text = self.score
+        self.info.labels["speed"].text = self.speed
 
     # apply translation to every sensor
     def update_sensors(self):

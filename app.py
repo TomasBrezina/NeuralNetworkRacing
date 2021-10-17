@@ -93,10 +93,13 @@ class App:
         self.camera_selected_car = None
 
         ### VARIABLES ###
-        self.show = False  # show track, cps, etc.
+        self.debugging_mode = False  # show track, cps, etc.
         self.pause = False  # pause the simulation
         self.timer = 0  # number of ticks
         self.timer_limit = self.settings["timeout_seconds"] // self.settings["render_timestep"]  # max ticks
+
+        ### CONSTANTS ###
+        self.CAR_SELECTION_RADIUS = 100  # max dist between car and click
 
         ### BIND EVENTS ###
         self.window.event(self.on_key_press)
@@ -105,6 +108,7 @@ class App:
         self.window.event(self.on_draw)
         self.window.event(self.on_mouse_drag)
         self.window.event(self.on_mouse_scroll)
+        self.window.event(self.on_mouse_press)
 
     def init_gl(self):
         glViewport(0, 0, self.window.width, self.window.height)
@@ -112,6 +116,13 @@ class App:
         glBlendFunc(pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
         glLineWidth(5)
         glEnable(GL_PROGRAM_POINT_SIZE_EXT)
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        car, dist = self.simulation.get_closest_car_to(
+            *self.graphics.camera.translate_onscreen_point(x, y)
+        )
+        if dist < self.CAR_SELECTION_RADIUS:
+            self.camera_selected_car = car
 
     # when key is released
     def on_key_press(self,symbol, modifiers):
@@ -145,8 +156,8 @@ class App:
         elif symbol == key.P:
             self.pause = not self.pause
         # show on/off
-        elif symbol == key.O:
-            self.show = not self.show
+        elif symbol == key.D:
+            self.debugging_mode = not self.debugging_mode
         # control camera
         elif symbol == key.C:
             self.camera_free = not self.camera_free
@@ -204,17 +215,27 @@ class App:
         self.simulation.track.bg.blit(0, 0)
 
         #draw cars
+        self.graphics.highligh_car(self.camera_selected_car)
         self.graphics.car_batch.draw()
 
         # draw hidden details
-        if self.show:
+        if self.debugging_mode:
             self.graphics.draw_grid()
             # draw edge of the track
             for vl in self.simulation.track.vertex_lists:
                 self.graphics.draw_vertex_list(vl)
-            for car in self.simulation.cars:
-                self.graphics.draw_car_sensors(car)
             self.graphics.draw_cps(self.simulation.track.cps_arr)
+
+            # selected car
+            self.graphics.draw_car_info(self.camera_selected_car)
+            self.graphics.draw_car_sensors(self.camera_selected_car)
+            # draw checked lines
+            lines_arr = self.simulation.get_car_cp_lines(self.camera_selected_car)
+            for i in lines_arr:
+                for j in i:
+                    self.graphics.draw_line(j, (0.5, 1, 1, 1))
+
+
         glPopMatrix()
 
         self.graphics.draw_hud()

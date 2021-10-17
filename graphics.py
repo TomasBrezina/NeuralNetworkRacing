@@ -95,6 +95,11 @@ class Camera:
         self.width = width
         self.height = height
 
+    def translate_onscreen_point(self, x, y):
+        left, right, bottom, top = self.get_sides()
+        return x * self.zoom + left, y * self.zoom + bottom
+
+
 class HUD:
     def __init__(self, width, height):
         self.width = width
@@ -119,7 +124,6 @@ class HUD:
             "cam_move": ["[Mouse] Move&Zoom","Comfortaa",False,15,(255,255,255,140),(320,12)],
             "cam_change": ["[Arrws] Change cars", "Comfortaa", False,15,(255,255,255,140),(320,36)],
             "cam_free": ["[C] Free Cam","Comfortaa",False,15,(255,255,255,140),(320,60)],
-
         }
         self.labels = self.init_labels(labels_init_dict)
 
@@ -194,10 +198,21 @@ class Graphics:
     def draw_vertex_list(self, vl):
         vl.draw(GL_LINE_LOOP)
 
+    def highligh_car(self, car):
+        self.draw_circle(car.xpos, car.ypos, 20)
+
+    def draw_circle(self, x, y, radius):
+        circle = pyglet.shapes.Circle(x,y,radius)
+        circle.draw()
+
     # draw track details
     def draw_cps(self, cps):
         for cp in cps:
             self.draw_point(cp)
+
+    def draw_car_info(self, car):
+        car.info.update_labels(car.xpos, car.ypos)
+        car.info.draw()
 
     def draw_car_sensors(self,car):
         for sen in car.sensors:
@@ -242,4 +257,52 @@ class Graphics:
     def clear_batch(self):
         del(self.car_batch)
         self.car_batch = pyglet.graphics.Batch()
+
+class CarInfo:
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+
+        try:
+            pyglet.font.add_file("graphics/Comfortaa-Bold.ttf")
+            pyglet.font.add_file("graphics/Comfortaa-Regular.ttf")
+        except:
+            print("Error >> loading font")
+
+        # LABELS
+        self.labels_init_dict = {
+            # key:  [text, font_name, bold, size, color, (x,y)]
+            "name": ["Car","Comfortaa",True,20,(255,255,255,140),(0,100)],
+            "active": ["true","Comfortaa",False,15,(255,255,255,140),(0,80)],
+            "score": ["0","Comfortaa",False,15,(255,255,255,140),(0,60)],
+            "speed": ["0","Comfortaa",False,15,(255,255,255,140),(0,40)],
+        }
+        self.labels = self.init_labels(self.labels_init_dict)
+
+    def init_labels(self, label_init):
+        labels = {}
+        for key in label_init:
+            val = label_init[key]
+            labels[key] = pyglet.text.Label(
+                val[0],
+                font_name=val[1],
+                bold=val[2],
+                font_size=val[3],
+                color=val[4],
+                x=val[5][0],
+                y=val[5][1]
+            )
+        return labels
+
+    # draw every label
+    def draw(self):
+        for key in self.labels:
+            self.labels[key].draw()
+
+    def update_labels(self, x, y):
+        for key in self.labels:
+            init_values = self.labels_init_dict[key]
+            label = self.labels[key]
+            label.x = x + init_values[5][0]
+            label.y = y + init_values[5][1]
 
