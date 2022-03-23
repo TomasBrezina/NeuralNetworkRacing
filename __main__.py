@@ -41,6 +41,7 @@ else:
     # create new neural network
     nn_stg = load_json("default_nn_config.json")
     entity.set_parameters_from_dict(nn_stg)
+    entity.nn = entity.get_random_nn();
 
 # window
 app = App(settings)

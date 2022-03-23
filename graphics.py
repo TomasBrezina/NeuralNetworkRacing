@@ -34,6 +34,7 @@ class Camera:
 
     def __init__(self, width, height):
         self.MOVEMENT_SPEED = 0.4
+        self.ZOOM_SPEED = 0.1
 
         self.x = width / 2
         self.y = height / 2
@@ -41,6 +42,8 @@ class Camera:
         self.tar_y = self.y
 
         self.zoom = 1
+        self.tar_zoom = 1;
+
         self.zoom_width = width
         self.zoom_height = height
 
@@ -53,14 +56,22 @@ class Camera:
         diff_y = self.tar_y - self.y
         shift_x = diff_x * abs(diff_x / self.width) * self.MOVEMENT_SPEED
         shift_y = diff_y * abs(diff_y / self.height) * self.MOVEMENT_SPEED
+
+        diff_zoom = self.tar_zoom - self.zoom
+        shift_zoom = diff_zoom * self.ZOOM_SPEED
+
+        self.set_zoom_center(self.zoom + shift_zoom)
         self.set_pos(self.x + shift_x, self.y + shift_y)
 
     def set_target(self, x, y):
         self.tar_x = x
         self.tar_y = y
 
-    def set_zoom(self, x, y, scale):
-        self.zoom /= scale
+    def set_target_zoom(self, x, y, scale):
+        self.tar_zoom = self.zoom * scale
+
+    def set_zoom(self, x, y, zoom):
+        self.zoom = zoom
 
         """pos_x = x / self.width
         pos_y = y / self.height
@@ -68,9 +79,11 @@ class Camera:
         self.x = self.left + pos_x * self.zoom_width
         self.y = self.bottom + pos_y * self.zoom_height"""
 
-        self.zoom_width /= scale
-        self.zoom_height /= scale
+        self.zoom_width = self.width / self.zoom;
+        self.zoom_height = self.height / self.zoom;
 
+    def set_target_zoom_center(self, scale):
+        self.set_target_zoom(self.width/2, self.height/2, scale)
 
     def set_zoom_center(self, scale):
         self.set_zoom(self.width/2, self.height/2, scale)

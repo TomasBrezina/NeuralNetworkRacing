@@ -170,9 +170,9 @@ class App:
         elif symbol == key.DOWN:
             self.camera_selected_car = self.simulation.get_leader()
         elif symbol == key.NUM_ADD:
-            self.graphics.camera.set_zoom_center(1.2)
+            self.graphics.camera.set_target_zoom_center(1.4)
         elif symbol == key.NUM_SUBTRACT:
-            self.graphics.camera.set_zoom_center(0.8)
+            self.graphics.camera.set_target_zoom_center(0.6)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modif):
         if self.camera_free:
@@ -180,9 +180,9 @@ class App:
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if scroll_y > 0:
-            self.graphics.camera.set_zoom(x, y, 1.2)
+            self.graphics.camera.set_target_zoom(x, y, 1.4)
         else:
-            self.graphics.camera.set_zoom(x, y, 0.8)
+            self.graphics.camera.set_target_zoom(x, y, 0.6)
 
     # switch cars
     def camera_switch_cars(self, step):
