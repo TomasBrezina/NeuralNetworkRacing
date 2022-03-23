@@ -317,7 +317,7 @@ class App:
 
         self.simulation.generate_cars_from_nns(
             nns=self.evolution.get_new_generation(
-                [self.entity.get_random_nn()],
+                [self.entity.get_nn()],
                 self.settings["population"]
             ),
             parameters=self.entity.get_car_parameters(),
