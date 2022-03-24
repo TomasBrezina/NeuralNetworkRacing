@@ -12,16 +12,16 @@ GRAY = (128, 128, 128, 255)
 
 # car images
 racers_info = {
-    "Black" : ["Black.png", (0,0,0,255)],
-    "Blue" : ["Blue.png",(0,0,170,255)],
-    "Cyan" : ["Cyan.png",(52,205,243,255)],
-    "Green" : ["Green.png",(10,183,45,255)],
-    "Gray" : ["Lightgray.png",(150,150,150,255)],
-    "Orange": ["Orange.png",(231,132,0,255)],
-    "Red": ["Red.png",(203,0,0,255)],
-    "Pink": ["Pink.png",(250,56,178,255)],
-    "Yellow": ["Yellow.png",(228,229,0,255)],
-    "White": ["White.png",(255,255,255,255)]
+    "alfaromeo" : ["alfaromeo.png", (0,0,0,255)],
+    "alphatauri" : ["alphatauri.png",(0,0,170,255)],
+    "alpine" : ["alpine.png",(52,205,243,255)],
+    "astonmartin" : ["astonmartin.png",(10,183,45,255)],
+    "ferrari" : ["ferrari.png",(150,150,150,255)],
+    "haas": ["haas.png",(231,132,0,255)],
+    "mclaren": ["mclaren.png",(203,0,0,255)],
+    "mercedes": ["mercedes.png",(250,56,178,255)],
+    "redbull": ["redbull.png",(228,229,0,255)],
+    "williams": ["williams.png",(255,255,255,255)]
 }
 
 """
@@ -239,7 +239,7 @@ class Graphics:
                 x=car.xpos,
                 y=car.ypos,
                 rotation=-car.angle - 90,
-                scale=0.11
+                scale=0.24
             )
 
     # load car texture
