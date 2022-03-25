@@ -220,7 +220,6 @@ class App:
         self.simulation.track.bg.blit(0, 0)
 
         #draw cars
-        self.graphics.highligh_car(self.camera_selected_car)
         self.graphics.car_batch.draw()
 
         # draw hidden details
@@ -232,6 +231,8 @@ class App:
             self.graphics.draw_cps(self.simulation.track.cps_arr)
 
             # selected car
+            self.camera_selected_car.update_info()
+            self.graphics.highligh_car(self.camera_selected_car)
             self.graphics.draw_car_info(self.camera_selected_car)
             self.graphics.draw_car_sensors(self.camera_selected_car)
             # draw checked lines

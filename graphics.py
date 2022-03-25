@@ -285,6 +285,11 @@ class CarInfo:
         except:
             print("Error >> loading font")
 
+        # corners of black background
+        self.bg_width = 100
+        self.bg_height = 100
+        self.bg_margin = 40
+
         # LABELS
         self.labels_init_dict = {
             # key:  [text, font_name, bold, size, color, (x,y)]
@@ -301,6 +306,7 @@ class CarInfo:
             val = label_init[key]
             labels[key] = pyglet.text.Label(
                 val[0],
+                anchor_x="center",
                 font_name=val[1],
                 bold=val[2],
                 font_size=val[3],
@@ -312,10 +318,25 @@ class CarInfo:
 
     # draw every label
     def draw(self):
+        self.draw_background()
         for key in self.labels:
             self.labels[key].draw()
 
+    def draw_background(self):
+        w = self.bg_width / 2
+        h = self.bg_height
+        m = self.bg_margin
+        glBegin(GL_TRIANGLE_FAN)
+        glColor4f(0,0,0,.5)
+        glVertex2f(self.x - w, self.y + m)
+        glVertex2f(self.x + w, self.y + m)
+        glVertex2f(self.x + w, self.y + m + h)
+        glVertex2f(self.x - w, self.y + m + h)
+        glEnd()
+
     def update_labels(self, x, y):
+        self.x = x
+        self.y = y
         for key in self.labels:
             init_values = self.labels_init_dict[key]
             label = self.labels[key]

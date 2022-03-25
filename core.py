@@ -309,9 +309,9 @@ class Car:
         return (new_x, new_y)
 
     def update_info(self):
-        self.info.labels["active"].text = self.active
-        self.info.labels["score"].text = self.score
-        self.info.labels["speed"].text = self.speed
+        self.info.labels["active"].text = str(self.active)
+        self.info.labels["score"].text = str(self.score)
+        self.info.labels["speed"].text = str(round(self.speed, 2))
 
     # apply translation to every sensor
     def update_sensors(self):
