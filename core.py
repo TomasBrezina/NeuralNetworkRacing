@@ -5,7 +5,7 @@ import pyglet
 import numpy as np
 from numpy import cos,sin,radians,sqrt,ones
 from neural_network import NeuralNetwork
-from graphics import CarInfo
+from graphics import CarInfo, CarLabel
 
 from objects import Result
 
@@ -105,6 +105,9 @@ class Simulation:
         else:
             return None
 
+    def get_cars_sorted(self):
+        return sorted(self.cars, key= lambda car:(car.score, -car.dist_to_cp), reverse=True)
+
     # debug
     def get_car_cp_lines(self, car):
         lines_arr = []
@@ -172,6 +175,9 @@ class Simulation:
         dist = dist_between((car.xpos, car.ypos), checkpoint)
         if (dist < 120):
             car.score += 1
+            car.dist_to_cp = float('inf')
+        else:
+            car.dist_to_cp = dist
 
     # behaviour of cars (acceleration, steering)
     # run nn
@@ -279,6 +285,7 @@ class Car:
         self.speed = 0
         # number of cps
         self.score = 0
+        self.dist_to_cp = 0
 
         # sprite
         self.sprite = sprite
@@ -298,6 +305,7 @@ class Car:
         self.sensors_lengths = [dist_between((0,0), pos) for pos in self.sensors]
 
         self.info = CarInfo()
+        self.label = CarLabel()
 
     # returns translated point (coordinates from perspective of car -> coordinates on screen)
     def translate_point(self, p):
@@ -307,6 +315,9 @@ class Car:
         new_x = x * _cos + y * _sin + self.xpos
         new_y = -(-x * _sin + y * _cos) + self.ypos
         return (new_x, new_y)
+
+    def update_label(self):
+        pass
 
     def update_info(self):
         self.info.labels["active"].text = str(self.active)

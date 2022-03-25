@@ -94,6 +94,9 @@ class App:
 
         ### VARIABLES ###
         self.debugging_mode = False  # show track, cps, etc.
+        self.label_show_mode = False
+        self.training_mode = False
+
         self.pause = False  # pause the simulation
         self.timer = 0  # number of ticks
         self.timer_limit = self.settings["timeout_seconds"] // self.settings["render_timestep"]  # max ticks
@@ -161,6 +164,10 @@ class App:
         # show on/off
         elif symbol == key.D:
             self.debugging_mode = not self.debugging_mode
+        elif symbol == key.L:
+            self.label_show_mode = not self.label_show_mode
+        elif symbol == key.K:
+            self.training_mode = not self.training_mode
         # control camera
         elif symbol == key.C:
             self.camera_free = not self.camera_free
@@ -208,6 +215,8 @@ class App:
 
     # every frame
     def on_draw(self):
+
+
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
 
@@ -215,12 +224,30 @@ class App:
         glLoadIdentity()
         glPushMatrix()
         self.graphics.clear()
+
+        if self.training_mode:
+            glPopMatrix()
+            self.graphics.draw_hud()
+            return
+
         self.graphics.set_camera_view()
 
         self.simulation.track.bg.blit(0, 0)
 
+
+
         #draw cars
         self.graphics.car_batch.draw()
+
+        # CAR LABELS - F1
+        if self.label_show_mode:
+            count = 1
+            for car in self.simulation.get_cars_sorted():
+                car.label.labels["order"].text = str(count)
+                count += 1
+            for car in self.simulation.cars:
+                self.graphics.draw_car_label(car)
+
 
         # draw hidden details
         if self.debugging_mode:
@@ -233,6 +260,8 @@ class App:
             # selected car
             self.camera_selected_car.update_info()
             self.graphics.highligh_car(self.camera_selected_car)
+
+
             self.graphics.draw_car_info(self.camera_selected_car)
             self.graphics.draw_car_sensors(self.camera_selected_car)
             # draw checked lines
@@ -243,6 +272,7 @@ class App:
 
 
         glPopMatrix()
+
 
         self.graphics.draw_hud()
 
@@ -261,6 +291,7 @@ class App:
             batch=self.graphics.car_batch
         )
         self.entity.set_nn_from_result(self.evolution.find_best_result(results))
+        self.entity.increment_gen_count()
 
         self.update_labels(self.entity)
         self.camera_selected_car = self.simulation.cars[0]
@@ -315,6 +346,7 @@ class App:
 
         # entity
         self.entity = entity
+        self.entity.increment_gen_count()
 
         # set track or generate random
         self.simulation.track = track if track is not None else self.tile_manager.generate_track(shape=(5, 3))

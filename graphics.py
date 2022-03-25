@@ -24,6 +24,7 @@ racers_info = {
     "williams": ["williams.png",(255,255,255,255)]
 }
 
+
 """
 Rendering.
 
@@ -42,7 +43,7 @@ class Camera:
         self.tar_y = self.y
 
         self.zoom = 1
-        self.tar_zoom = 1;
+        self.tar_zoom = 1
 
         self.zoom_width = width
         self.zoom_height = height
@@ -80,8 +81,8 @@ class Camera:
         self.x = self.left + pos_x * self.zoom_width
         self.y = self.bottom + pos_y * self.zoom_height"""
 
-        self.zoom_width = self.width / self.zoom;
-        self.zoom_height = self.height / self.zoom;
+        self.zoom_width = self.width / self.zoom
+        self.zoom_height = self.height / self.zoom
 
     def set_target_zoom_center(self, scale):
         self.set_target_zoom(self.width/2, self.height/2, scale)
@@ -169,6 +170,7 @@ class HUD:
 class Graphics:
     def __init__(self, width, height):
         self.car_batch = pyglet.graphics.Batch()
+
         self.car_images = []
         for name in racers_info:
             self.car_images.append((name, self.load_car_image("graphics/cars/"+racers_info[name][0])))
@@ -226,6 +228,10 @@ class Graphics:
         for cp in cps:
             self.draw_point(cp)
 
+    def draw_car_label(self, car):
+        car.label.update_pos(car.xpos, car.ypos)
+        car.label.draw()
+
     def draw_car_info(self, car):
         car.info.update_labels(car.xpos, car.ypos)
         car.info.draw()
@@ -274,29 +280,92 @@ class Graphics:
         del(self.car_batch)
         self.car_batch = pyglet.graphics.Batch()
 
+class CarLabel:
+    def __init__(self, height=24, width=43, margin=25):
+        self.x = 0
+        self.y = 0
+
+        # black sizes
+        self.height = height
+        self.width = width
+        self.margin = margin
+
+        h, m = self.height, self.margin
+        w_w, b_w = 28, self.width
+        self.bg_init_dict = {
+            # key: [color, [(0,0),(0,0),(0,0),(0,0)]
+            "black_bg": [(0, 0, 0, 0.5), [(0, m), (0, m + h), (b_w, m + h), (b_w, m)]],
+            "white_bg": [(255, 255, 255, 0.8), [(0, m), (0, m + h), (-w_w, m + h), (-w_w, m)]]
+        }
+
+        self.labels = {}
+        self.labels_init_dict = {
+            # key:  [text, font_name, bold, size, color, (x,y)]
+            "order": ["1","Comfortaa", True, 12, (0,0,0,255), (-5, m), "right"],
+            "name": ["TST","Comfortaa", True, 12, (255, 255, 255, 255), (5, m), "left"],
+        }
+
+        self.init_labels()
+
+    def init_labels(self):
+        for key in self.labels_init_dict:
+            val = self.labels_init_dict[key]
+            self.labels[key] = pyglet.text.Label(
+                val[0],
+                anchor_x=val[6],
+                font_name=val[1],
+                bold=val[2],
+                font_size=val[3],
+                color=val[4],
+                x=val[5][0],
+                y=val[5][1]
+            )
+
+    def draw_labels(self):
+        self.labels["order"].draw()
+        self.labels["name"].draw()
+
+    def draw_background(self):
+        for key in self.bg_init_dict:
+            val = self.bg_init_dict[key]
+
+            glBegin(GL_TRIANGLE_FAN)
+            glColor4f(*val[0])
+            for j in val[1]:
+                glVertex2f(self.x + j[0], self.y + j[1])
+            glEnd()
+
+    def draw(self):
+        self.draw_background()
+        self.draw_labels()
+
+    def update_pos(self, x, y):
+        self.x = x
+        self.y = y
+        for key in self.labels:
+            init_values = self.labels_init_dict[key]
+            label = self.labels[key]
+            label.x = x + init_values[5][0]
+            label.y = y + init_values[5][1]
+
+
 class CarInfo:
     def __init__(self):
         self.x = 0
         self.y = 0
 
-        try:
-            pyglet.font.add_file("graphics/Comfortaa-Bold.ttf")
-            pyglet.font.add_file("graphics/Comfortaa-Regular.ttf")
-        except:
-            print("Error >> loading font")
-
         # corners of black background
         self.bg_width = 100
         self.bg_height = 100
-        self.bg_margin = 40
+        self.bg_margin = -160
 
         # LABELS
         self.labels_init_dict = {
             # key:  [text, font_name, bold, size, color, (x,y)]
-            "name": ["Car","Comfortaa",True,20,(255,255,255,140),(0,100)],
-            "active": ["true","Comfortaa",False,15,(255,255,255,140),(0,80)],
-            "score": ["0","Comfortaa",False,15,(255,255,255,140),(0,60)],
-            "speed": ["0","Comfortaa",False,15,(255,255,255,140),(0,40)],
+            "name": ["Car","Comfortaa",True,20,(255,255,255,200),(0,-100)],
+            "active": ["true","Comfortaa",False,15,(255,255,255,200),(0,-120)],
+            "score": ["0","Comfortaa",False,15,(255,255,255,200),(0,-140)],
+            "speed": ["0","Comfortaa",False,15,(255,255,255,200),(0,-160)],
         }
         self.labels = self.init_labels(self.labels_init_dict)
 
