@@ -118,11 +118,14 @@ class App:
         glEnable(GL_PROGRAM_POINT_SIZE_EXT)
 
     def on_mouse_press(self, x, y, button, modifiers):
-        car, dist = self.simulation.get_closest_car_to(
-            *self.graphics.camera.translate_onscreen_point(x, y)
-        )
-        if dist < self.CAR_SELECTION_RADIUS:
-            self.camera_selected_car = car
+        if self.camera_free and button == 4:
+            self.graphics.camera.set_target(*self.graphics.camera.translate_onscreen_point(x, y))
+        else:
+            car, dist = self.simulation.get_closest_car_to(
+                *self.graphics.camera.translate_onscreen_point(x, y)
+            )
+            if dist < self.CAR_SELECTION_RADIUS:
+                self.camera_selected_car = car
 
     # when key is released
     def on_key_press(self,symbol, modifiers):
@@ -176,7 +179,9 @@ class App:
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modif):
         if self.camera_free:
-            self.graphics.camera.drag(-dx, -dy)
+            # left
+            if (buttons == 1):
+                self.graphics.camera.drag(-dx, -dy)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if scroll_y > 0:
@@ -276,9 +281,10 @@ class App:
                     if not self.camera_selected_car.active:
                         self.camera_selected_car = self.simulation.get_leader()
                     self.graphics.camera.set_target(self.camera_selected_car.xpos, self.camera_selected_car.ypos)
-                    self.graphics.camera.update()
-                else:
-                    pass
+
+            self.graphics.camera.update_movement()
+            self.graphics.camera.update_zoom()
+
             # update sprites position and rotation
             self.graphics.update_sprites(self.simulation.cars)
             self.update_timelimit()

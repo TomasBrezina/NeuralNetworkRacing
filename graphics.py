@@ -33,7 +33,7 @@ Coordinates [x,y]:
 class Camera:
 
     def __init__(self, width, height):
-        self.MOVEMENT_SPEED = 0.4
+        self.MOVEMENT_SPEED = 0.6
         self.ZOOM_SPEED = 0.1
 
         self.x = width / 2
@@ -50,18 +50,19 @@ class Camera:
         self.width = width
         self.height = height
 
-    def update(self):
+    def update_movement(self):
         # smooth camera movement
         diff_x = self.tar_x - self.x
         diff_y = self.tar_y - self.y
         shift_x = diff_x * abs(diff_x / self.width) * self.MOVEMENT_SPEED
         shift_y = diff_y * abs(diff_y / self.height) * self.MOVEMENT_SPEED
 
+        self.set_pos(self.x + shift_x, self.y + shift_y)
+
+    def update_zoom(self):
         diff_zoom = self.tar_zoom - self.zoom
         shift_zoom = diff_zoom * self.ZOOM_SPEED
-
         self.set_zoom_center(self.zoom + shift_zoom)
-        self.set_pos(self.x + shift_x, self.y + shift_y)
 
     def set_target(self, x, y):
         self.tar_x = x
@@ -91,6 +92,8 @@ class Camera:
     def drag(self, dx, dy):
         self.x += dx
         self.y += dy
+        self.tar_x = self.x
+        self.tar_y = self.y
 
     def set_pos(self, x, y):
         self.x = x
