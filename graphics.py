@@ -34,7 +34,7 @@ Coordinates [x,y]:
 class Camera:
 
     def __init__(self, width, height):
-        self.MOVEMENT_LIMIT = 1
+        self.MOVEMENT_LIMIT = 0.5
         self.MOVEMENT_SPEED = 0.6
         self.ZOOM_SPEED = 0.1
 
@@ -103,8 +103,6 @@ class Camera:
     def get_sides(self):
         x, y = round(self.x, 5), round(self.y, 5)
         sx, sy = round(self.zoom_width, 5) / 2, round(self.zoom_height / 2, 5)
-        if max(abs(x), abs(y), abs(sx), abs(sy)) > 10000:
-            print("x")
         # left, right, bottom, top
         return x - sx, x + sx, y - sy, y + sy
 
@@ -116,7 +114,7 @@ class Camera:
 
     def translate_onscreen_point(self, x, y):
         left, right, bottom, top = self.get_sides()
-        return x * self.zoom + left, y * self.zoom + bottom
+        return x / self.zoom + left, y / self.zoom + bottom
 
 
 class HUD:
@@ -133,10 +131,10 @@ class HUD:
         # LABELS
         labels_init_dict = {
             # key:  [text, font_name, bold, size, color, (x,y)]
-            "name": ["","Comfortaa",True,30,(255,255,255,140),(10,75)],
+            "name": ["","Comfortaa",True,30,(255,255,255,140),(10,78)],
             "gen": ["Generation: 0","Comfortaa",False,15,(255,255,255,140),(10,12)],
             "max": ["Best score: 0","Comfortaa",False,15,(255,255,255,140),(10,36)],
-            "time": ["Time: 0 / 0","Comfortaa",False,15,(255,255,255,140),(10,60)],
+            "time": ["Time: 0 / 0","Comfortaa",False,15,(255,255,255,140),(10,62)],
 
 
             "save": ["[S] Save","Comfortaa",False,13,(255,255,255,140),(10,140)],
@@ -209,7 +207,6 @@ class Graphics:
         self.hud.on_resize(width, height)
 
     def set_camera_view(self):
-        print(self.camera.get_sides())
         glOrtho(*self.camera.get_sides(), 1, -1)
 
     def set_default_view(self):

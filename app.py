@@ -121,11 +121,13 @@ class App:
         glEnable(GL_PROGRAM_POINT_SIZE_EXT)
 
     def on_mouse_press(self, x, y, button, modifiers):
-        car, dist = self.simulation.get_closest_car_to(
-            *self.graphics.camera.translate_onscreen_point(x, y)
-        )
-        if dist < self.CAR_SELECTION_RADIUS:
-            self.camera_selected_car = car
+        if not self.camera_free:
+            car, dist = self.simulation.get_closest_car_to(
+                *self.graphics.camera.translate_onscreen_point(x, y)
+            )
+            print(self.graphics.camera.translate_onscreen_point(x, y))
+            if dist < self.CAR_SELECTION_RADIUS:
+                self.camera_selected_car = car
 
     # when key is released
     def on_key_press(self,symbol, modifiers):
