@@ -4,6 +4,9 @@ import pyglet
 from pyglet.gl import *
 import numpy as np
 
+
+def index_loop(ind, len):
+    return ind % len if ind >= len else ind
 # colors
 WHITE = (255,255,255,255)
 GREEN = (0, 153, 51, 255)
@@ -179,6 +182,7 @@ class Graphics:
     def __init__(self, width, height):
         self.car_batch = pyglet.graphics.Batch()
         self.car_labels_batch = pyglet.graphics.Batch()
+        self.leaderboard_batch = pyglet.graphics.Batch()
 
         self.car_images = {}
         for name in cars_init:
@@ -190,6 +194,7 @@ class Graphics:
         # MODULES
         self.hud = HUD(width, height)
         self.camera = Camera(width, height)
+        self.leaderboard = Leaderboard(self.leaderboard_batch)
 
     def draw_grid(self):
         step = 768
@@ -237,6 +242,19 @@ class Graphics:
     def draw_cps(self, cps):
         for cp in cps:
             self.draw_point(cp)
+
+    def draw_leaderboard(self, sorted_cars):
+        glLoadIdentity()
+        glPushMatrix()
+        glOrtho(0,self.width,0,self.height,1,-1)
+
+        self.leaderboard.update(sorted_cars)
+
+        self.leaderboard.draw_background()
+
+        self.leaderboard_batch.draw()
+
+        glPopMatrix()
 
     def draw_car_labels(self, cars):
         for car in cars:
@@ -295,40 +313,43 @@ class Graphics:
         self.car_batch = pyglet.graphics.Batch()
 
 class Leaderboard:
-    def __init__(self):
+    def __init__(self, batch):
         self.batch = pyglet.graphics.Batch()
 
-        self.labels = []
+        self.car_labels = []
 
-        self.screen_x = 0
-        self.screen_y = 0
+        self.start_x = 50
+        self.start_y = 650
 
         self.limit = 20
 
-        self.height = 30
-        self.width = 100
+        self.height = 22
+        self.width = 43
 
-        self.margin = 10
+        self.font_size = 10
 
+        self.init_labels(batch)
 
+    def init_labels(self, batch):
+        for i in range(1, self.limit + 1):
+            label = CarLabel(order=i, name="", height=self.height, width=self.width, batch=batch, font_size=self.font_size)
+            label.update_pos(self.start_x, self.start_y - (self.height * i))
+            self.car_labels.append(label)
 
-    def init_labels(self):
-        for i in range(20):
-            v = self.place_label_init_dict
-            self.labels.append(pyglet.text.Label(
-                v[0], anchor_x=v[6], font_name=v[1],
-                bold=v[2], font_size=v[3],
-                color=v[4], x=v[5], y=1
-            ))
+    def update(self, sorted_cars):
+        for i, car in enumerate(sorted_cars):
+            self.car_labels[index_loop(i, len(self.car_labels))].labels["name"].text = car.label.labels["name"].text
+            self.car_labels[index_loop(i, len(self.car_labels))].bg_init_dict["white_bg"][0] = car.label.bg_init_dict["white_bg"][0]
+
+            if i >= len(self.car_labels):
+                break
 
     def draw_background(self):
-        pass
-
-    def draw_labels(self):
-        pass
+        for label in self.car_labels:
+            label.draw_background()
 
 class CarLabel:
-    def __init__(self, order=1, name="", height=24, width=43, margin=25, batch=None):
+    def __init__(self, order=1, name="", color=(255, 255, 255, 128), height=24, width=43, margin=25, batch=None, font_size=12):
         self.x = 0
         self.y = 0
 
@@ -337,20 +358,22 @@ class CarLabel:
         self.width = width
         self.margin = margin
 
+        self.font_size = font_size
+
         h, m = self.height, self.margin
         w_w, b_w = 28, self.width
 
         self.bg_init_dict = {
             # key: [color, [(0,0),(0,0),(0,0),(0,0)]
-            "black_bg": [(0, 0, 0, 0.5), [(0, m), (0, m + h), (b_w, m + h), (b_w, m)]],
-            "white_bg": [(255, 255, 255, 0.8), [(0, m), (0, m + h), (-w_w, m + h), (-w_w, m)]]
+            "black_bg": [(0, 0, 0, 128), [(0, m), (0, m + h), (b_w, m + h), (b_w, m)]],
+            "white_bg": [color, [(0, m), (0, m + h), (-w_w, m + h), (-w_w, m)]]
         }
 
         self.labels = {}
         self.labels_init_dict = {
             # key:  [text, font_name, bold, size, color, (x,y), anchor_x]
-            "order": [str(order),"Comfortaa", True, 12, (0,0,0,255), (-5, m), "right"],
-            "name": [name, "Comfortaa", True, 12, (255, 255, 255, 255), (5, m), "left"],
+            "order": [str(order),"Comfortaa", True, self.font_size, (0,0,0,255), (-5, m), "right"],
+            "name": [name, "Comfortaa", True, self.font_size, (255, 255, 255, 255), (5, m), "left"],
         }
 
         self.init_labels(batch=batch)
@@ -379,7 +402,7 @@ class CarLabel:
             val = self.bg_init_dict[key]
 
             glBegin(GL_TRIANGLE_FAN)
-            glColor4f(*val[0])
+            glColor4ub(*val[0])
             for j in val[1]:
                 glVertex2f(self.x + j[0], self.y + j[1])
             glEnd()

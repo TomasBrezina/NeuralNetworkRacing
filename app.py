@@ -94,7 +94,7 @@ class App:
 
         ### VARIABLES ###
         self.debugging_mode = False  # show track, cps, etc.
-        self.label_show_mode = False
+        self.label_show_mode = 0  # 0, 1, 2
         self.training_mode = False
 
         self.pause = False  # pause the simulation
@@ -164,7 +164,7 @@ class App:
         elif symbol == key.D:
             self.debugging_mode = not self.debugging_mode
         elif symbol == key.L:
-            self.label_show_mode = not self.label_show_mode
+            self.label_show_mode = index_loop(self.label_show_mode + 1, 3)
         elif symbol == key.N:
             self.training_mode = not self.training_mode
         # control camera
@@ -239,7 +239,7 @@ class App:
         self.graphics.car_batch.draw()
 
         # CAR LABELS - F1
-        if self.label_show_mode:
+        if self.label_show_mode == 2:
             count = 1
             for car in self.simulation.get_cars_sorted():
                 car.label.labels["order"].text = str(count)
@@ -271,7 +271,8 @@ class App:
 
         glPopMatrix()
 
-
+        if self.label_show_mode == 1 or self.label_show_mode == 2:
+            self.graphics.draw_leaderboard(self.simulation.get_cars_sorted())
         self.graphics.draw_hud()
 
     # create new generation from best nns

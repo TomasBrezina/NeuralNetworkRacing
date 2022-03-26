@@ -10,26 +10,26 @@ from graphics import CarInfo, CarLabel
 from objects import Result
 
 drivers_init = [
-    ["BOT", "alfaromeo", 30],
-    ["ZHO", "alfaromeo", 30],
-    ["GAS", "alphatauri", 32],
-    ["TSU", "alphatauri", 32],
-    ["OCO", "alpine", 27],
-    ["ALO", "alpine", 27],
-    ["HUL", "astonmartin", 28],
-    ["STR", "astonmartin", 28],
-    ["LEC", "ferrari", 35],
-    ["SAI", "ferrari", 35],
-    ["SCH", "haas", 30],
-    ["MAG", "haas", 30],
-    ["RIC", "mclaren", 27],
-    ["NOR", "mclaren", 27],
-    ["HAM", "mercedes", 33],
-    ["RUS", "mercedes", 33],
-    ["PER", "redbull", 35],
-    ["VER", "redbull", 35],
-    ["LAT", "williams", 25],
-    ["ALB", "williams", 25]
+    ["BOT", "alfaromeo", 30, (133, 25, 30, 200)],
+    ["ZHO", "alfaromeo", 30, (133, 25, 30, 200)],
+    ["GAS", "alphatauri", 32, (48, 69, 96, 200)],
+    ["TSU", "alphatauri", 32, (48, 69, 96, 200)],
+    ["OCO", "alpine", 27, (57, 145, 245, 200)],
+    ["ALO", "alpine", 27, (57, 145, 245, 200)],
+    ["HUL", "astonmartin", 28, (25, 145, 109, 200)],
+    ["STR", "astonmartin", 28, (25, 145, 109, 200)],
+    ["LEC", "ferrari", 35, (204, 42, 30, 200)],
+    ["SAI", "ferrari", 35, (204, 42, 30, 200)],
+    ["SCH", "haas", 30, (255, 255, 255, 200)],
+    ["MAG", "haas", 30, (255, 255, 255, 200)],
+    ["RIC", "mclaren", 27, (242, 156, 57, 200)],
+    ["NOR", "mclaren", 27, (242, 156, 57, 200)],
+    ["HAM", "mercedes", 33, (95, 207, 191, 200)],
+    ["RUS", "mercedes", 33, (95, 207, 191, 200)],
+    ["PER", "redbull", 35, (1, 31, 227, 200)],
+    ["VER", "redbull", 35, (1, 31, 227, 200)],
+    ["LAT", "williams", 25, (25, 95, 245, 200)],
+    ["ALB", "williams", 2, (25, 95, 245, 200)]
 ]
 
 # finds intersection between two LINE SEGMENTS
@@ -84,24 +84,25 @@ class Simulation:
         self.cars = []
 
         count = 0
-        for driver_name, driver_image, speed in drivers_init:
-            image = images[driver_image]
-            sprite = pyglet.sprite.Sprite(image, batch=batch)
-            label = CarLabel(name=driver_name, batch=labels_batch)
-            pos = (*self.track.cps_arr[self.track.spawn_index], self.track.spawn_angle)
+        while (count < len(nns)):
+            for driver_name, driver_image, speed, color in drivers_init:
+                image = images[driver_image]
+                sprite = pyglet.sprite.Sprite(image, batch=batch)
+                label = CarLabel(color=color, name=driver_name, batch=labels_batch)
+                pos = (*self.track.cps_arr[self.track.spawn_index], self.track.spawn_angle)
 
-            parameters["max_speed"] = speed
+                # parameters["max_speed"] = speed
 
-            self.cars.append(Car(
-                nn=nns[count],
-                pos=pos,
-                parameters=parameters,
-                sprite=sprite,
-                label=label
-            ))
+                self.cars.append(Car(
+                    nn=nns[index_loop(count, len(nns))],
+                    pos=pos,
+                    parameters=parameters,
+                    sprite=sprite,
+                    label=label
+                ))
 
-            count += 1
-            if count >= len(nns): break
+                count += 1
+                if count >= len(nns): break
 
     def generate_cars_from_nns(self, nns, parameters, images, batch, labels_batch=None):
         self.cars = []

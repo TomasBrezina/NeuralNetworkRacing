@@ -14,6 +14,8 @@ LARGE_SIZE GRID
 LARGE_SIZE = 768
 LARGE_DIM = 1
 
+LARGE_GRID_SHIT = 5
+
 """
 MEDIUM_SIZE GRID
 -- 14 24 34 --
@@ -26,6 +28,7 @@ MEDIUM_SIZE = LARGE_SIZE / 3
 MEDIUM_DIM = 5
 
 SMALL_SIZE = MEDIUM_SIZE / 8
+
 
 
 def SEG_TO_COORDS(segment):
@@ -141,8 +144,15 @@ class TileManager:
             ]
         }
 
-    def generate_track(self, shape=(5, 3), spawn_index=0):
+    def generate_track_from_medium_path(self, medium_path, shape=(5, 3), spawn_index=0):
+        tile_grid = self.generate_tile_grid_from_medium_path(shape, medium_path)
+        return self.generate_track(tile_grid, shape, spawn_index)
+
+    def auto_generate_track(self, shape=(5, 3), spawn_index=0):
         tile_grid = self.generate_tile_grid(shape)
+        return self.generate_track(tile_grid, shape, spawn_index)
+
+    def generate_track(self, tile_grid, shape=(5, 3), spawn_index=0):
         nodes = np.array([])
 
         """image = pyglet.image.Texture.create(
@@ -156,6 +166,8 @@ class TileManager:
         ))
 
         for grid_pos, tile in tile_grid:
+            grid_pos = grid_pos + 1
+
             nodes = self.add_tile_to_arr(nodes, grid_pos, tile)
             # paste tiles to image - reverse y axis
             image.paste(tile.image, (grid_pos[0] * LARGE_SIZE, (shape[1] - grid_pos[1] - 1) * LARGE_SIZE))
@@ -170,8 +182,6 @@ class TileManager:
             spawn_index=spawn_index,
             bg=pyglet_image
         )
-
-
 
     def _grid_to_path(self, grid_coords):
         # path of grid coordinates to direction path
