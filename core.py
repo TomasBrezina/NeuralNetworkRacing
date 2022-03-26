@@ -58,18 +58,20 @@ class Simulation:
 
         self.checkpoint_range = [-3, -2, -1, 0, 1]
 
-    def generate_cars_from_nns(self, nns, parameters, images, batch):
+    def generate_cars_from_nns(self, nns, parameters, images, batch, labels_batch=None):
         self.cars = []
         for i in range(len(nns)):
             name, image = images[index_loop(i, len(images))]
             sprite = pyglet.sprite.Sprite(image, batch=batch)
+            label = CarLabel(name="TST", batch=labels_batch)
             pos = (*self.track.cps_arr[self.track.spawn_index], self.track.spawn_angle)
             # get mutated version of one of best NNs
             self.cars.append(Car(
                 nn=nns[i],
                 pos=pos,
                 parameters=parameters,
-                sprite=sprite
+                sprite=sprite,
+                label=label
             ))
 
     def get_closest_car_to(self, x, y):
@@ -207,7 +209,6 @@ class Simulation:
 Track object.
 
 The way this works is the best I have come up with so far. 
-I tried grid subdivision or some line intersect. algorithms, but this is simple, and I will be able to generate tracks randomly.
 
 Track consists of several 2-point "gates" in a loop. These points connect to form the edge of a track.
     
@@ -234,7 +235,6 @@ class Track:
         self.spawn_angle = spawn_angle
         if self.spawn_angle == None:
             self.spawn_angle = angle_between(self.cps_arr[self.spawn_index], self.cps_arr[self.spawn_index + 1])
-            print(self.spawn_angle)
 
     def nodes_to_lines(self, nodes):
         """
@@ -264,7 +264,7 @@ Each one has its own neural network and sprite.
 """
 
 class Car:
-    def __init__(self, nn: NeuralNetwork, pos: tuple, sprite, parameters: dict):
+    def __init__(self, nn: NeuralNetwork, pos: tuple, sprite, parameters: dict, label: CarLabel = None):
         self.nn = nn
 
         """
@@ -305,7 +305,8 @@ class Car:
         self.sensors_lengths = [dist_between((0,0), pos) for pos in self.sensors]
 
         self.info = CarInfo()
-        self.label = CarLabel()
+
+        self.label = label
 
     # returns translated point (coordinates from perspective of car -> coordinates on screen)
     def translate_point(self, p):

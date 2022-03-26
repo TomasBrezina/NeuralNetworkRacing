@@ -121,14 +121,11 @@ class App:
         glEnable(GL_PROGRAM_POINT_SIZE_EXT)
 
     def on_mouse_press(self, x, y, button, modifiers):
-        if self.camera_free and button == 4:
-            self.graphics.camera.set_target(*self.graphics.camera.translate_onscreen_point(x, y))
-        else:
-            car, dist = self.simulation.get_closest_car_to(
-                *self.graphics.camera.translate_onscreen_point(x, y)
-            )
-            if dist < self.CAR_SELECTION_RADIUS:
-                self.camera_selected_car = car
+        car, dist = self.simulation.get_closest_car_to(
+            *self.graphics.camera.translate_onscreen_point(x, y)
+        )
+        if dist < self.CAR_SELECTION_RADIUS:
+            self.camera_selected_car = car
 
     # when key is released
     def on_key_press(self,symbol, modifiers):
@@ -166,7 +163,7 @@ class App:
             self.debugging_mode = not self.debugging_mode
         elif symbol == key.L:
             self.label_show_mode = not self.label_show_mode
-        elif symbol == key.K:
+        elif symbol == key.N:
             self.training_mode = not self.training_mode
         # control camera
         elif symbol == key.C:
@@ -245,8 +242,7 @@ class App:
             for car in self.simulation.get_cars_sorted():
                 car.label.labels["order"].text = str(count)
                 count += 1
-            for car in self.simulation.cars:
-                self.graphics.draw_car_label(car)
+            self.graphics.draw_car_labels(self.simulation.cars)
 
 
         # draw hidden details
@@ -288,7 +284,8 @@ class App:
             ),
             parameters=self.entity.get_car_parameters(),
             images=self.graphics.car_images,
-            batch=self.graphics.car_batch
+            batch=self.graphics.car_batch,
+            labels_batch=self.graphics.car_labels_batch
         )
         self.entity.set_nn_from_result(self.evolution.find_best_result(results))
         self.entity.increment_gen_count()
@@ -361,7 +358,8 @@ class App:
             ),
             parameters=self.entity.get_car_parameters(),
             images=self.graphics.car_images,
-            batch=self.graphics.car_batch
+            batch=self.graphics.car_batch,
+            labels_batch=self.graphics.car_labels_batch
         )
 
         self.camera_selected_car = self.simulation.get_leader()
