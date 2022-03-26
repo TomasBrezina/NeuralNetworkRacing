@@ -34,6 +34,7 @@ Coordinates [x,y]:
 class Camera:
 
     def __init__(self, width, height):
+        self.MOVEMENT_LIMIT = 1
         self.MOVEMENT_SPEED = 0.6
         self.ZOOM_SPEED = 0.1
 
@@ -55,9 +56,8 @@ class Camera:
         # smooth camera movement
         diff_x = self.tar_x - self.x
         diff_y = self.tar_y - self.y
-        shift_x = diff_x * abs(diff_x / self.width) * self.MOVEMENT_SPEED
-        shift_y = diff_y * abs(diff_y / self.height) * self.MOVEMENT_SPEED
-
+        shift_x = diff_x * min(abs(diff_x / self.width) * self.MOVEMENT_SPEED, self.MOVEMENT_LIMIT)
+        shift_y = diff_y * min(abs(diff_y / self.height) * self.MOVEMENT_SPEED, self.MOVEMENT_LIMIT)
         self.set_pos(self.x + shift_x, self.y + shift_y)
 
     def update_zoom(self):
@@ -103,8 +103,8 @@ class Camera:
     def get_sides(self):
         x, y = round(self.x, 5), round(self.y, 5)
         sx, sy = round(self.zoom_width, 5) / 2, round(self.zoom_height / 2, 5)
-        if abs(x - sx) > 100000:
-            pass
+        if max(abs(x), abs(y), abs(sx), abs(sy)) > 10000:
+            print("x")
         # left, right, bottom, top
         return x - sx, x + sx, y - sy, y + sy
 
