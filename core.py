@@ -9,6 +9,28 @@ from graphics import CarInfo, CarLabel
 
 from objects import Result
 
+drivers_init = [
+    ["BOT", "alfaromeo", 30],
+    ["ZHO", "alfaromeo", 30],
+    ["GAS", "alphatauri", 32],
+    ["TSU", "alphatauri", 32],
+    ["OCO", "alpine", 27],
+    ["ALO", "alpine", 27],
+    ["HUL", "astonmartin", 28],
+    ["STR", "astonmartin", 28],
+    ["LEC", "ferrari", 35],
+    ["SAI", "ferrari", 35],
+    ["SCH", "haas", 30],
+    ["MAG", "haas", 30],
+    ["RIC", "mclaren", 27],
+    ["NOR", "mclaren", 27],
+    ["HAM", "mercedes", 33],
+    ["RUS", "mercedes", 33],
+    ["PER", "redbull", 35],
+    ["VER", "redbull", 35],
+    ["LAT", "williams", 25],
+    ["ALB", "williams", 25]
+]
 
 # finds intersection between two LINE SEGMENTS
 def find_intersection( p0, p1, p2, p3 ) :
@@ -58,8 +80,32 @@ class Simulation:
 
         self.checkpoint_range = [-3, -2, -1, 0, 1]
 
+    def generate_cars_and_drivers_from_nns(self, nns, parameters, images, batch, labels_batch=None):
+        self.cars = []
+
+        count = 0
+        for driver_name, driver_image, speed in drivers_init:
+            image = images[driver_image]
+            sprite = pyglet.sprite.Sprite(image, batch=batch)
+            label = CarLabel(name=driver_name, batch=labels_batch)
+            pos = (*self.track.cps_arr[self.track.spawn_index], self.track.spawn_angle)
+
+            parameters["max_speed"] = speed
+
+            self.cars.append(Car(
+                nn=nns[count],
+                pos=pos,
+                parameters=parameters,
+                sprite=sprite,
+                label=label
+            ))
+
+            count += 1
+            if count >= len(nns): break
+
     def generate_cars_from_nns(self, nns, parameters, images, batch, labels_batch=None):
         self.cars = []
+
         for i in range(len(nns)):
             name, image = images[index_loop(i, len(images))]
             sprite = pyglet.sprite.Sprite(image, batch=batch)

@@ -11,19 +11,18 @@ RED = (204, 0, 0, 255)
 GRAY = (128, 128, 128, 255)
 
 # car images
-racers_info = {
-    "alfaromeo" : ["alfaromeo.png", (0,0,0,255)],
-    "alphatauri" : ["alphatauri.png",(0,0,170,255)],
-    "alpine" : ["alpine.png",(52,205,243,255)],
-    "astonmartin" : ["astonmartin.png",(10,183,45,255)],
-    "ferrari" : ["ferrari.png",(150,150,150,255)],
-    "haas": ["haas.png",(231,132,0,255)],
-    "mclaren": ["mclaren.png",(203,0,0,255)],
-    "mercedes": ["mercedes.png",(250,56,178,255)],
-    "redbull": ["redbull.png",(228,229,0,255)],
-    "williams": ["williams.png",(255,255,255,255)]
+cars_init = {
+    "alfaromeo" : ["alfaromeo.png", (133, 25, 30, 255)],
+    "alphatauri" : ["alphatauri.png", (48, 69, 96, 255)],
+    "alpine" : ["alpine.png", (57, 145, 245, 255)],
+    "astonmartin" : ["astonmartin.png", (25, 145, 109, 255)],
+    "ferrari" : ["ferrari.png", (204, 42, 30, 255)],
+    "haas": ["haas.png", (255, 255, 255, 255)],
+    "mclaren": ["mclaren.png", (242, 156, 57, 255)],
+    "mercedes": ["mercedes.png", (95, 207, 191, 255)],
+    "redbull": ["redbull.png", (1, 31, 227, 255)],
+    "williams": ["williams.png", (25, 95, 245, 255)]
 }
-
 
 """
 Rendering.
@@ -181,9 +180,9 @@ class Graphics:
         self.car_batch = pyglet.graphics.Batch()
         self.car_labels_batch = pyglet.graphics.Batch()
 
-        self.car_images = []
-        for name in racers_info:
-            self.car_images.append((name, self.load_car_image("graphics/cars/"+racers_info[name][0])))
+        self.car_images = {}
+        for name in cars_init:
+            self.car_images[name] = self.load_car_image("graphics/cars/"+cars_init[name][0])
 
         self.width = width
         self.height = height
@@ -350,8 +349,8 @@ class CarLabel:
         self.labels = {}
         self.labels_init_dict = {
             # key:  [text, font_name, bold, size, color, (x,y), anchor_x]
-            "order": ["1","Comfortaa", True, 12, (0,0,0,255), (-5, m), "right"],
-            "name": ["TST","Comfortaa", True, 12, (255, 255, 255, 255), (5, m), "left"],
+            "order": [str(order),"Comfortaa", True, 12, (0,0,0,255), (-5, m), "right"],
+            "name": [name, "Comfortaa", True, 12, (255, 255, 255, 255), (5, m), "left"],
         }
 
         self.init_labels(batch=batch)

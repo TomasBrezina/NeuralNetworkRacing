@@ -279,7 +279,7 @@ class App:
         self.graphics.clear_batch()
 
         results = self.simulation.get_nns_results()
-        self.simulation.generate_cars_from_nns(
+        self.simulation.generate_cars_and_drivers_from_nns(
             nns=self.evolution.get_new_generation_from_results(
                 results,
                 self.settings["population"]
@@ -353,7 +353,7 @@ class App:
         # set labels
         self.update_labels(self.entity)
 
-        self.simulation.generate_cars_from_nns(
+        self.simulation.generate_cars_and_drivers_from_nns(
             nns=self.evolution.get_new_generation(
                 [self.entity.get_nn()],
                 self.settings["population"]
