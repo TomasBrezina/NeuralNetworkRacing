@@ -2,8 +2,8 @@
   "name" : "F1",
   "acceleration": 1,
   "friction": 0.95,
-  "max_speed": 45,
-  "rotation_speed": 3.5,
+  "max_speed": 18,
+  "rotation_speed": 3,
   "shape": [6, 4, 3, 2],
   "max_score": 0,
   "gen_count": 0

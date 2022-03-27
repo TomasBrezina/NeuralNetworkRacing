@@ -24,7 +24,7 @@ json (loading and saving settings and saves)
 
 from messages import ask_load_nn, ask_yes_no
 from app import App, load_json
-from evolution import Evolution, Entity
+from evolution import Evolution, Entity, F1Evolution
 
 # simulation settings
 settings = load_json("config.json")
@@ -41,7 +41,7 @@ else:
     # create new neural network
     nn_stg = load_json("default_nn_config.json")
     entity.set_parameters_from_dict(nn_stg)
-    entity.nn = entity.get_random_nn();
+    entity.set_nn(entity.get_random_nn());
 
 import f1_tracks
 
@@ -49,6 +49,6 @@ import f1_tracks
 app = App(settings)
 app.start_simulation(
     entity=entity,
-    track=app.tile_manager.generate_track_from_medium_path(f1_tracks.australia_track, shape=(8,4), spawn_index=0)
+    track=app.tile_manager.generate_track_from_medium_path(f1_tracks.australia_track, shape=(8,4), spawn_index=-11)
     # track=app.tile_manager.generate_track(shape=(5,3), spawn_index=0)
 )

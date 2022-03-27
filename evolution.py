@@ -4,7 +4,6 @@ from os import listdir
 import json
 from objects import Result
 
-
 class Entity:
     """
     Neural network entity with name, settings, neural network, ...
@@ -35,6 +34,9 @@ class Entity:
     # Get nn from Result object
     def get_nn(self):
         return self.nn
+
+    def set_nn(self, nn):
+        self.nn = nn
 
     # Get nn with random weights with this shape
     def get_random_nn(self):
@@ -155,4 +157,29 @@ class Evolution:
 
 class CustomEvolution(Evolution):
     pass
+
+from f1_tracks import get_drivers_init
+
+class F1Evolution(Evolution):
+    def __init__(self):
+        self.best_result_count = len(get_drivers_init())
+        self.best_results = [Result(None, -1, 0)] * self.best_result_count
+        super(F1Evolution, self).__init__()
+
+    def get_best_results(self, results):
+        # merge new results and best results, sort them
+        merged_results = sorted(self.best_results + results, reverse=True)
+        # slice top n
+        return merged_results[:self.best_result_count]
+
+    def get_new_generation_from_results(self, results: [Result], population: int, to_add_count=3):
+        best_nns = []
+        self.best_results = self.get_best_results(results)
+        print(self.best_results)
+
+        for i in range(population):
+            best_nns.append(self.best_results[index_loop(i, len(self.best_results))].nn)
+
+        return self.get_new_generation(best_nns, population)
+
 

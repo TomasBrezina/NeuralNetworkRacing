@@ -36,9 +36,13 @@ Coordinates [x,y]:
 class Camera:
 
     def __init__(self, width, height):
-        self.MOVEMENT_LIMIT = 0.5
-        self.MOVEMENT_SPEED = 0.6
+        self.MOVEMENT_LIMIT = 0.6
+        self.MOVEMENT_SPEED = 0.5
         self.ZOOM_SPEED = 0.1
+
+        # camera shot
+        self.MOVEMENT_SPEED = 0.7
+        self.ZOOM_SPEED = 0.02
 
         self.x = width / 2
         self.y = height / 2
@@ -53,6 +57,7 @@ class Camera:
 
         self.width = width
         self.height = height
+
 
     def update_movement(self):
         # smooth camera movement
@@ -133,12 +138,12 @@ class HUD:
         # LABELS
         labels_init_dict = {
             # key:  [text, font_name, bold, size, color, (x,y)]
-            "name": ["","Comfortaa",True,30,(255,255,255,140),(10,78)],
-            "gen": ["Generation: 0","Comfortaa",False,15,(255,255,255,140),(10,12)],
-            "max": ["Best score: 0","Comfortaa",False,15,(255,255,255,140),(10,36)],
-            "time": ["Time: 0 / 0","Comfortaa",False,15,(255,255,255,140),(10,62)],
-
-
+            # "name": ["","Comfortaa",True,30,(255,255,255,140),(20,1000)],
+            # "gen": ["Generation: 0","Comfortaa",False,30,(255,255,255,140),(20,1000)],
+            # "max": ["Best score: 0","Comfortaa",False,30,(255,255,255,140),(20,960)],
+            "time": ["Time: 0 / 0","Comfortaa",False,30,(255,255,255,140),(200,980)],
+        }
+        """
             "save": ["[S] Save","Comfortaa",False,13,(255,255,255,140),(10,140)],
             "full": ["[F] Full","Comfortaa",False,13,(255,255,255,140),(10,160)],
             "pause": ["[P] Pause","Comfortaa",False,13,(255,255,255,140),(10,180)],
@@ -151,8 +156,9 @@ class HUD:
             "cam_change": ["[Left & Right] Change cars", "Comfortaa", False,13,(255,255,255,140),(10,310)],
             "cam_leader": ["[Up] Select leader", "Comfortaa", False, 13, (255, 255, 255, 140), (10, 330)],
             "cam_free": ["[C] Free Cam","Comfortaa",False,13,(255,255,255,140),(10,350)],
-
         }
+        """
+
         self.labels = self.init_labels(labels_init_dict)
 
     def init_labels(self, label_init):
@@ -319,14 +325,14 @@ class Leaderboard:
         self.car_labels = []
 
         self.start_x = 50
-        self.start_y = 650
+        self.start_y = 1000
 
         self.limit = 20
 
         self.height = 22
         self.width = 43
 
-        self.font_size = 10
+        self.font_size = 11
 
         self.init_labels(batch)
 
@@ -338,8 +344,14 @@ class Leaderboard:
 
     def update(self, sorted_cars):
         for i, car in enumerate(sorted_cars):
-            self.car_labels[index_loop(i, len(self.car_labels))].labels["name"].text = car.label.labels["name"].text
-            self.car_labels[index_loop(i, len(self.car_labels))].bg_init_dict["white_bg"][0] = car.label.bg_init_dict["white_bg"][0]
+            self.car_labels[i].labels["name"].text = car.label.labels["name"].text
+            self.car_labels[i].bg_init_dict["white_bg"][0] = car.label.bg_init_dict["white_bg"][0]
+
+            if car.active == False:
+                self.car_labels[i].labels["name"].color = (255, 0, 0, 255)
+            else:
+                self.car_labels[i].labels["name"].color = (255, 255, 255, 255)
+
 
             if i >= len(self.car_labels):
                 break
@@ -434,7 +446,7 @@ class CarInfo:
         # LABELS
         self.labels_init_dict = {
             # key:  [text, font_name, bold, size, color, (x,y)]
-            "name": ["Car","Comfortaa",True,20,(255,255,255,200),(0,-100)],
+            "steering": ["0","Comfortaa",True,15,(255,255,255,200),(0,-100)],
             "active": ["true","Comfortaa",False,15,(255,255,255,200),(0,-120)],
             "score": ["0","Comfortaa",False,15,(255,255,255,200),(0,-140)],
             "speed": ["0","Comfortaa",False,15,(255,255,255,200),(0,-160)],

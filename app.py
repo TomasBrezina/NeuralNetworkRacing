@@ -11,7 +11,7 @@ from graphics import Graphics
 from core import Simulation, index_loop
 from neural_network import NeuralNetwork
 
-from evolution import Evolution, Entity
+from evolution import F1Evolution, Entity, Evolution
 from core import Track
 
 from menu import SettingsMenu
@@ -86,7 +86,7 @@ class App:
         self.tile_manager.load_tiles(root_dir="tiles")
 
         ### LABELS ###
-        self.graphics.hud.labels["name"].text = ""
+        # self.graphics.hud.labels["name"].text = ""
 
         ### USER GUI ###
         self.camera_free = False
@@ -94,7 +94,8 @@ class App:
 
         ### VARIABLES ###
         self.debugging_mode = False  # show track, cps, etc.
-        self.label_show_mode = 0  # 0, 1, 2
+        self.label_show_mode = False
+        self.leaderboard_show_mode = False
         self.training_mode = False
 
         self.pause = False  # pause the simulation
@@ -147,7 +148,7 @@ class App:
         # TODO: load file
         if symbol == key.T:
             self.change_track(
-                track=self.tile_manager.generate_track(shape=(5, 3))
+                track=self.tile_manager.auto_generate_track (shape=(5, 3))
             )
 
         elif symbol == key.DELETE:
@@ -164,7 +165,9 @@ class App:
         elif symbol == key.D:
             self.debugging_mode = not self.debugging_mode
         elif symbol == key.L:
-            self.label_show_mode = index_loop(self.label_show_mode + 1, 3)
+            self.label_show_mode = not self.label_show_mode
+        elif symbol == key.O:
+            self.leaderboard_show_mode = not self.leaderboard_show_mode
         elif symbol == key.N:
             self.training_mode = not self.training_mode
         # control camera
@@ -239,7 +242,7 @@ class App:
         self.graphics.car_batch.draw()
 
         # CAR LABELS - F1
-        if self.label_show_mode == 2:
+        if self.label_show_mode:
             count = 1
             for car in self.simulation.get_cars_sorted():
                 car.label.labels["order"].text = str(count)
@@ -271,7 +274,7 @@ class App:
 
         glPopMatrix()
 
-        if self.label_show_mode == 1 or self.label_show_mode == 2:
+        if self.leaderboard_show_mode:
             self.graphics.draw_leaderboard(self.simulation.get_cars_sorted())
         self.graphics.draw_hud()
 
@@ -332,9 +335,10 @@ class App:
 
     # update labels from self entity
     def update_labels(self, entity: Entity):
-        self.graphics.hud.labels["name"].text = self.entity.name[:10]  # first 10 characters to fit screen
-        self.graphics.hud.labels["gen"].text = "Generation: " + str(int(self.entity.gen_count))
-        self.graphics.hud.labels["max"].text = "Best score: " + str(self.entity.max_score)
+        # self.graphics.hud.labels["name"].text = self.entity.name[:10]  # first 10 characters to fit screen
+        # self.graphics.hud.labels["gen"].text = "Generation: " + str(int(self.entity.gen_count))
+        # self.graphics.hud.labels["max"].text = "Best score: " + str(self.entity.max_score)
+        pass
 
     def change_track(self, track):
         self.timer = 0
@@ -369,6 +373,10 @@ class App:
         self.graphics.update_sprites(self.simulation.cars)
 
         self.on_resize(self.window.width, self.window.height)
+
+        # SHOT
+        self.pause = True
+        self.graphics.camera.set_pos(self.camera_selected_car.xpos, self.camera_selected_car.ypos)
 
         pyglet.clock.schedule_interval(self.update, self.settings["render_timestep"])
         pyglet.app.run()

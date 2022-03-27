@@ -9,28 +9,9 @@ from graphics import CarInfo, CarLabel
 
 from objects import Result
 
-drivers_init = [
-    ["BOT", "alfaromeo", 30, (133, 25, 30, 200)],
-    ["ZHO", "alfaromeo", 30, (133, 25, 30, 200)],
-    ["GAS", "alphatauri", 32, (48, 69, 96, 200)],
-    ["TSU", "alphatauri", 32, (48, 69, 96, 200)],
-    ["OCO", "alpine", 27, (57, 145, 245, 200)],
-    ["ALO", "alpine", 27, (57, 145, 245, 200)],
-    ["HUL", "astonmartin", 28, (25, 145, 109, 200)],
-    ["STR", "astonmartin", 28, (25, 145, 109, 200)],
-    ["LEC", "ferrari", 35, (204, 42, 30, 200)],
-    ["SAI", "ferrari", 35, (204, 42, 30, 200)],
-    ["SCH", "haas", 30, (255, 255, 255, 200)],
-    ["MAG", "haas", 30, (255, 255, 255, 200)],
-    ["RIC", "mclaren", 27, (242, 156, 57, 200)],
-    ["NOR", "mclaren", 27, (242, 156, 57, 200)],
-    ["HAM", "mercedes", 33, (95, 207, 191, 200)],
-    ["RUS", "mercedes", 33, (95, 207, 191, 200)],
-    ["PER", "redbull", 35, (1, 31, 227, 200)],
-    ["VER", "redbull", 35, (1, 31, 227, 200)],
-    ["LAT", "williams", 25, (25, 95, 245, 200)],
-    ["ALB", "williams", 2, (25, 95, 245, 200)]
-]
+from f1_tracks import get_drivers_init
+
+CRASH_DISTANCE = 15
 
 # finds intersection between two LINE SEGMENTS
 def find_intersection( p0, p1, p2, p3 ) :
@@ -85,18 +66,20 @@ class Simulation:
 
         count = 0
         while (count < len(nns)):
-            for driver_name, driver_image, speed, color in drivers_init:
+            for driver_name, driver_image, handicap, color in get_drivers_init():
                 image = images[driver_image]
                 sprite = pyglet.sprite.Sprite(image, batch=batch)
                 label = CarLabel(color=color, name=driver_name, batch=labels_batch)
                 pos = (*self.track.cps_arr[self.track.spawn_index], self.track.spawn_angle)
 
-                # parameters["max_speed"] = speed
+                car_param = parameters.copy()
+                car_param["max_speed"] += (10 - handicap) * 0.2
+                car_param["acceleration"] += (10 - handicap) * 0.003
 
                 self.cars.append(Car(
                     nn=nns[index_loop(count, len(nns))],
                     pos=pos,
-                    parameters=parameters,
+                    parameters=car_param,
                     sprite=sprite,
                     label=label
                 ))
@@ -203,11 +186,13 @@ class Simulation:
                     )
                     if intersection:
                         dist = dist_between(intersection, (car.xpos, car.ypos))
-                        # did the car crah?
-                        if dist < 30:
-                            car.speed = 0
-                            car.active = False
-                            car.sprite.opacity = 100
+                        if dist < 20:
+                            car.speed -= car.speed / 10
+                            # did the car crah?
+                            if dist < CRASH_DISTANCE:
+                                car.speed = 0
+                                car.active = False
+                                car.sprite.opacity = 100
                         # normalized distance (0,1)
                         dist = dist / car.sensors_lengths[sen_ind]
                         if min_dist > dist: min_dist = dist
@@ -368,6 +353,7 @@ class Car:
         pass
 
     def update_info(self):
+        self.info.labels["steering"].text = str(round(self.angle, 2))
         self.info.labels["active"].text = str(self.active)
         self.info.labels["score"].text = str(self.score)
         self.info.labels["speed"].text = str(round(self.speed, 2))

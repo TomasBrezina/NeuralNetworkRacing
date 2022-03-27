@@ -1,10 +1,10 @@
 {
-    "width": 1280,
-    "height": 720,
+    "width": 630,
+    "height": 1120,
     "friction": 0.1,
     "render_timestep": 0.025,
-    "timeout_seconds": 30,
+    "timeout_seconds": 45,
 
-    "population": 150,
-    "mutation_rate": 0.6
+    "population": 20,
+    "mutation_rate": 0.4
 }
