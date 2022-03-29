@@ -222,6 +222,7 @@ class TileManager:
         m_inp = first
         for out in out_path:
             m_out = l_to_m(out)
+            # input, output coords, tile index
             m_path.append([m_inp, m_out])
             m_inp = GRID_OUT_TO_INP(m_out, size=MEDIUM_DIM)
         m_path[-1][1] = GRID_OUT_TO_INP(first, size=MEDIUM_DIM)
@@ -239,8 +240,10 @@ class TileManager:
         """
         tile_grid = []
         grid_pos = np.array([0, 0])
-        for inp, out in path:
-            tile = self.tiles[COORDS_TO_STR(inp) + COORDS_TO_STR(out)][0]
+        for values in path:
+            inp, out = values[0], values[1]
+            index = values[2] if len(values) >= 3 else 0
+            tile = self.tiles[COORDS_TO_STR(inp) + COORDS_TO_STR(out)][index]
             tile_grid.append((grid_pos.copy(), tile))
             grid_pos += GRID_SHIFT(out, size=MEDIUM_DIM)
         return tile_grid

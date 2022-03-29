@@ -49,6 +49,9 @@ import f1_tracks
 app = App(settings)
 app.start_simulation(
     entity=entity,
-    track=app.tile_manager.generate_track_from_medium_path(f1_tracks.australia_track, shape=(8,4), spawn_index=-11)
+    track=app.tile_manager.generate_track_from_medium_path(
+        f1_tracks.australia_track,
+        shape=(8,4), spawn_index=-11
+    )
     # track=app.tile_manager.generate_track(shape=(5,3), spawn_index=0)
 )

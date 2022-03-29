@@ -331,7 +331,8 @@ class App:
             self.timer = 0
             self.new_generation()
         seconds = int(self.timer * self.settings["render_timestep"])
-        self.graphics.hud.labels["time"].text = "Time: " + str(seconds) + " / " + str(self.settings["timeout_seconds"])
+        # self.graphics.hud.labels["time"].text = "Time: " + str(seconds) + " / " + str(self.settings["timeout_seconds"])
+        self.update_lap()
 
     # update labels from self entity
     def update_labels(self, entity: Entity):
@@ -339,6 +340,11 @@ class App:
         # self.graphics.hud.labels["gen"].text = "Generation: " + str(int(self.entity.gen_count))
         # self.graphics.hud.labels["max"].text = "Best score: " + str(self.entity.max_score)
         pass
+
+    def update_lap(self):
+        leader =  self.simulation.get_leader()
+        leader_score = leader.score if leader else 0
+        self.graphics.hud.labels["lap"].text = f"Lap: {self.simulation.track.get_laps_from_score(leader_score)} / 3"
 
     def change_track(self, track):
         self.timer = 0

@@ -141,7 +141,8 @@ class HUD:
             # "name": ["","Comfortaa",True,30,(255,255,255,140),(20,1000)],
             # "gen": ["Generation: 0","Comfortaa",False,30,(255,255,255,140),(20,1000)],
             # "max": ["Best score: 0","Comfortaa",False,30,(255,255,255,140),(20,960)],
-            "time": ["Time: 0 / 0","Comfortaa",False,30,(255,255,255,140),(200,980)],
+            # "time": ["Time: 0 / 0","Comfortaa",False,30,(255,255,255,140),(200,980)],
+            "lap": ["Lap: 0 / 0","Comfortaa",False,30,(255,255,255,140),(200,980)],
         }
         """
             "save": ["[S] Save","Comfortaa",False,13,(255,255,255,140),(10,140)],

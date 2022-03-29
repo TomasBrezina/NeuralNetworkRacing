@@ -268,6 +268,13 @@ class Track:
         if self.spawn_angle == None:
             self.spawn_angle = angle_between(self.cps_arr[self.spawn_index], self.cps_arr[self.spawn_index + 1])
 
+    def get_laps_from_score(self, score):
+        """
+        car score to number of laps
+        """
+        one_lap = len(self.cps_arr)
+        return score // one_lap
+
     def nodes_to_lines(self, nodes):
         """
         :param nodes: shape (left/right, n, x/y)

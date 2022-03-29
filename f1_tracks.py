@@ -32,6 +32,8 @@ drivers_init = [
 def get_drivers_init():
     return sorted(drivers_init, key=lambda x: x[2], reverse=True)
 
+import numpy as np
+
 australia_track = [
     [[4, 3], [2, 4]],
     [[2, 0], [3, 4]],
@@ -47,9 +49,10 @@ australia_track = [
     [[4, 1], [1, 0]],
     [[1, 4], [0, 3]],
     # start
-    [[4, 3], [0, 3]],
+    [[4, 3], [0, 3], 1],
     [[4, 3], [1, 4]],
     [[1, 0], [0, 1]],
     [[4, 1], [0, 1]],
     [[4, 1], [0, 3]],
 ]
+
