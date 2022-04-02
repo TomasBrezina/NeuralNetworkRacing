@@ -272,7 +272,7 @@ class TileManager:
                         img = Image.open(os.path.abspath(file))
                 if is_tile:
                     try:
-                        print(f"{os.path.basename(dir)} {img}")
+                        # print(f"{os.path.basename(dir)} {img}")
                         tiles.append(Tile(arr, inp, out, image=img))
                     except:
                         print(f"Error loading {os.path.basename(dir)}")
