@@ -87,4 +87,3 @@ class SettingsMenu:
 
     def run(self):
         self.root.wait_window()
-

@@ -14,12 +14,6 @@ I used a simple Evolutionary algorithm to train the NN.
 
 Run command:
 pip install -r requirements.txt
-
-Requirements:
-pyglet (graphics)
-numpy (neural network, math, ..)
-os (not necessary - only in save_neural_network function)
-json (loading and saving settings and saves)
 """
 
 from messages import ask_load_nn, ask_yes_no
