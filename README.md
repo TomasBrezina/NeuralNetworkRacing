@@ -4,6 +4,12 @@
 Neural network learns how to drive a car on a track.
 Simple 2D simulation with **pyglet** & **numpy**.
 
+
+
+https://user-images.githubusercontent.com/46631861/161601803-30c7b0d2-ae7f-4145-b3fa-95378e36cd19.mp4
+
+
+
 ##  Install packages
 
     pip install -r requirements.txt
@@ -24,7 +30,7 @@ https://github.com/TomasBrezina/NeuralNetworkRacing/blob/0ac7d81ef07f70ef9a3b9fc
 	    "mutation_rate": 0.6 // mutation rate after gen
     }
 
-**default_nn_config.json** - default car config for new saves
+**default_nn_config.json** - Default car config for new saves.  
 
     {
 	    "name" : "test" 
@@ -38,7 +44,7 @@ https://github.com/TomasBrezina/NeuralNetworkRacing/blob/0ac7d81ef07f70ef9a3b9fc
     }
 
 ## NEURAL NETWORK
-![nn_architecture](nn)
+![nn-architecture](https://user-images.githubusercontent.com/46631861/161595500-a58ccd65-840a-4ced-b3b1-123bc6ee9926.png)
 
 ## EVOLUTION
 Best cars in each generation are chosen to be the parents of the next, slightly mutated generation.
