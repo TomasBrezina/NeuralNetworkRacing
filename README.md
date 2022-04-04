@@ -17,28 +17,25 @@ https://github.com/TomasBrezina/NeuralNetworkRacing/blob/0ac7d81ef07f70ef9a3b9fc
     {
 	    "width": 1280
 	    "height": 720
-	    "friction": 0.1 // car friction
+	    "friction": 0.1
 	    "render_timestep": 0.025 // time between frames in seconds - 0.025s = 40 FPS
 	    "timeout_seconds": 30 // maximum time for each gen
 	    "population": 40 // number of cars
 	    "mutation_rate": 0.6 // mutation rate after gen
     }
 
-**default_nn_config.json** - default car config for new NNs 
+**default_nn_config.json** - default car config for new saves
 
     {
-        "name" : "test"
-    	"acceleration": 1
-    	"friction": 0.95
-    	"max_speed": 30
-    	"rotation_speed": 4
-    	"shape": [6, 4, 3, 2]
-    	"max_score": 0
-    	"gen_count": 0
+	    "name" : "test" 
+	    "acceleration": 1
+	    "friction": 0.95
+	    "max_speed": 30 
+	    "rotation_speed": 4
+	    "shape": [6, 4, 3, 2] // neural network shape - do not change first and last layer
+	    "max_score": 0
+	    "gen_count": 0
     }
-
-## Saves
-
 
 ## NEURAL NETWORK
 ![nn_architecture](nn)
