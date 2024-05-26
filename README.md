@@ -9,9 +9,10 @@ Simple 2D simulation with **pyglet** & **numpy**.
 https://user-images.githubusercontent.com/46631861/161601803-30c7b0d2-ae7f-4145-b3fa-95378e36cd19.mp4
 
 
-## HOW TO RUN?
+> [!WARNING]
+> This code is a product of my early programming days. I've refactored it, but it might not align with current best practices.
 
----
+## ▶️️ HOW TO RUN?
 
 ### Install packages
     pip install -r requirements.txt
@@ -54,13 +55,13 @@ Or use a virtual environment.
 	    "gen_count": 0
     }
 
-## NEURAL NETWORK
+## 🕸️ NEURAL NETWORK
 ![nn-architecture](https://user-images.githubusercontent.com/46631861/161595500-a58ccd65-840a-4ced-b3b1-123bc6ee9926.png)
 
-## EVOLUTION
+## 🧬 EVOLUTION
 Best cars in each generation are chosen to be the parents of the next, slightly mutated generation.
 
-## ENVIROMENT & TRACK GENERATION
+## 🏎️ ENVIROMENT & TRACK GENERATION
 
 | ![image](https://user-images.githubusercontent.com/46631861/161503165-7a99e1e1-d726-4797-8167-4bb582fa3457.png) | ![track-generation](https://user-images.githubusercontent.com/46631861/161503022-bf0ca0d1-f678-48ce-b570-5bcaaa47b6f3.gif) | 
 |--|--|
