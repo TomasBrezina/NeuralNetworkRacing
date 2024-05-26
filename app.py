@@ -125,7 +125,6 @@ class App:
             car, dist = self.simulation.get_closest_car_to(
                 *self.graphics.camera.translate_onscreen_point(x, y)
             )
-            print(self.graphics.camera.translate_onscreen_point(x, y))
             if dist < self.CAR_SELECTION_RADIUS:
                 self.camera_selected_car = car
 
