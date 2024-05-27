@@ -17,7 +17,7 @@ https://user-images.githubusercontent.com/46631861/161601803-30c7b0d2-ae7f-4145-
 ### Install packages
     pip install -r requirements.txt
 
-https://github.com/TomasBrezina/NeuralNetworkRacing/blob/0ac7d81ef07f70ef9a3b9fc9e3f3e179bda86d6d/requirements.txt#L1-L3
+https://github.com/TomasBrezina/NeuralNetworkRacing/blob/e6ff65a77d38f0cdad01690a0a770a9eb9c2da2a/requirements.txt#L1-L3
 
 ### Run main file
 Should work with ``Python 3.0`` and higher.
