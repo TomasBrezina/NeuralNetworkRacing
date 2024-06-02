@@ -66,3 +66,14 @@ Best cars in each generation are chosen to be the parents of the next, slightly 
 | ![image](https://user-images.githubusercontent.com/46631861/161503165-7a99e1e1-d726-4797-8167-4bb582fa3457.png) | ![track-generation](https://user-images.githubusercontent.com/46631861/161503022-bf0ca0d1-f678-48ce-b570-5bcaaa47b6f3.gif) | 
 |--|--|
 
+## ⚖️ LICENSE
+Shield: [![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
+
+This work is licensed under a
+[Creative Commons Attribution-NonCommercial 4.0 International License][cc-by-nc].
+
+[![CC BY-NC 4.0][cc-by-nc-image]][cc-by-nc]
+
+[cc-by-nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc-by-nc-image]: https://licensebuttons.net/l/by-nc/4.0/88x31.png
+[cc-by-nc-shield]: https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg
