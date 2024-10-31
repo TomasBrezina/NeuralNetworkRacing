@@ -1,5 +1,10 @@
+# NeuralNetworkRacing (demo)
 
-# NeuralNetworkRacing
+> [!NOTE]  
+> I decided to remake this old project from scratch in C# and Godot, turning it into a **sandbox simulation game**.
+> I've added new features like a **track editor and neural network editor**, with more to come!
+> If you'd like to support me, please wishlist [AI Learns To Drive on Steam](https://store.steampowered.com/app/3312030/AI_Learns_To_Drive/) 💖
+> 
 
 Neural network learns how to drive a car on a track.
 Simple 2D simulation with **pyglet** & **numpy**.
