@@ -139,7 +139,7 @@ class App:
                 if filename:
                     filename = filename.split("/")[-1]  # filename and ext
                     self.entity.save_file(save_name=filename, folder=directory)
-                    show_message(f"Succesfully saved {filename} to /{directory}")
+                    show_message(f"Successfully saved {filename} to /{directory}")
             else:
                 show_error("No neural network to save yet.")
                 print(f"Cannot save.")
